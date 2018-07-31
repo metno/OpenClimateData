@@ -45,20 +45,22 @@ ui <- dashboardPage(
                  selectInput("aspect", textOutput("aspectlabel"), choices= aspects,selected = aspects[1]),
                  selectInput("highlightTS", textOutput("highlightTSlabel"), choices= higlighting),
                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS)
+                 # conditionalPanel(condition="tscale == 'day'",
+                 #                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))
           ))
     ),
-  fluidPage(
-    box(title=textOutput("htitle"),status = "success",collapsed = TRUE,
-        collapsible = TRUE, width="100%", solidHeader = TRUE,
-        column(9, plotlyOutput("histstation", height = 500,width = '100%')),
-        column(3,
-               selectInput("timespace", textOutput("timespacelabel"), choices= timespace,selected = timespace[1]),
-               dateRangeInput('dateRange',
-                              label = textOutput("timeperiodlabel"),
-                              start = as.Date('1951-01-01'),
-                              end = date(),startview = 'year')
-        ))
-  ),
+    fluidPage(
+      box(title=textOutput("htitle"),status = "success",collapsed = TRUE,
+          collapsible = TRUE, width="100%", solidHeader = TRUE,
+          column(9, plotlyOutput("histstation", height = 500,width = '100%')),
+          column(3,
+                 selectInput("timespace", textOutput("timespacelabel"), choices= timespace,selected = timespace[1]) #,
+                 #dateRangeInput('dateRange',
+                 #                label = textOutput("timeperiodlabel"),
+                 #              start = as.Date('1951-01-01'),
+                 #             end = date(),startview = 'year')
+          ))
+    ),
   fluidPage(
     box(title=textOutput("cftitle"),status = "success",collapsed = TRUE, 
         collapsible = TRUE, width="100%", solidHeader = TRUE, 
@@ -77,7 +79,7 @@ ui <- dashboardPage(
                  tags$a(href="https:github.com/metno/esd/wiki","'esd' R-package,"),
                  "avalable from",tags$a(href="https:github.com/metno/esd","github.com/metno/esd"),
                  ". The source code for this app is available from ",
-                 tags$a(href="https:github.com/metno/esd_Rshiny/metnod","github.com/metno/esd_Rshiny/metnod")),
+                 tags$a(href="https:github.com/metno/OpenClimateData","github.com/metno/OpenClimateData")),
                  tags$br(),
                  tags$h1("Comments and feedbacks"),
                  tags$p("Do you have any comments or feedbacks? If so, please respond through this",

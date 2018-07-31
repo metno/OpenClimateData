@@ -41,7 +41,7 @@ server <- function(input, output, session) {
     #print('((()))')
   }
   
-  ## Reactives ------------------------------------------------------------------------------------------------------ 
+  ## Reactive expressions to update information -------------------------------------------------------------- 
   
   thresh <- reactive({
     return(as.numeric(input$thresh))
@@ -133,6 +133,11 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="src",choices=src)
   })
   
+  observeEvent(input$lingo, {
+    names(timespace) <- timespacenames[as.numeric(input$lingo),]
+    updateSelectInput(session=session,inputId="timespace",choices=timespace)
+  })
+  
   observeEvent(input$statistic, {
     print(paste('Update range for',input$statistic))
     statistic <- vals()
@@ -166,6 +171,12 @@ server <- function(input, output, session) {
     }                
     #print(aspects)
     updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
+  })
+  
+  observeEvent(input$tscale, {
+    if (input$tscale=='season') newseaTS <- seaTS[1] else
+    if (input$tscale=='season') newseaTS <- seaTS[1:5] else newseaTS <- seaTS
+    updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
   })
   
   observeEvent(input$ci,{
@@ -222,7 +233,7 @@ server <- function(input, output, session) {
     }
     #print("y <- retrieve.station"); print(selectedStid)
     y <- retrieve.station(fnames[as.numeric(input$ci)],stid=selectedStid,verbose=verbose)
-    if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
+    #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
     
     #print(input$season); print(input$tscale); print(input$aspect)
     if (is.precip(y)) {
@@ -260,7 +271,7 @@ server <- function(input, output, session) {
     #print(highlight10)
     
     #print('Extract data for histogram')
-    if (input$timespace == timespace[2]) yH <- y else yH <- statistic
+    if (input$timespace == 'Histogram_location') yH <- coredata(y) else yH <- statistic
     
     #print('Add marker for selected location')
     leafletProxy("map",data = y) %>% clearPopups() %>% 
@@ -346,33 +357,25 @@ server <- function(input, output, session) {
                      Sys.sleep(0.05)
                    }
                    })
-      mx <- ceiling(1.1*max(abs(y),na.rm=TRUE))
-      if (input$timespace != 'Annual cycle') {
-        if (is.precip(yH)) {
-          if (input$tscale=='day') bin_size <- 1 else bin_size <- round(mx/25)
-          breaks = seq(1,mx,by=bin_size)
-          cY <- coredata(yH); cY[cY<1] <- NA
-          h <- hist(cY,breaks=breaks,plot=FALSE)
-          if (input$tscale=='day') pdf <- wetfreq(yH)*exp(-h$mids/wetmean(yH)) else
-                                   pdf <- dnorm(h$mids,mean=mean(yH,na.rm=TRUE),sd=sd(yH,na.rm=TRUE))
-        } else if (is.T(yH)) {
-          bin_size=0.25
-          breaks = seq(floor(min(yH)),ceiling(max(yH)),by=bin_size)
-          h <- hist(coredata(yH),breaks=breaks,plot=FALSE)
-          pdf <- dnorm(h$mids,mean=mean(yH,na.rm=TRUE),sd=sd(yH,na.rm=TRUE))
-        } else {
-          h <- hist(coredata(yH),plot=FALSE)
-          pdf <- dnorm(h$mids,mean=mean(yH,na.rm=TRUE),sd=sd(yH,na.rm=TRUE))
-        }
-        
-        dist <- data.frame(y=h$density,x=h$mids,pdf=pdf)
+      #mx <- ceiling(1.1*max(abs(y),na.rm=TRUE))
+      print('histstation'); print(summary(yH))
+      if (substr(input$timespace,1,12) != 'Annual_cycle') {
+        fit <- density(yH[is.finite(yH)])
+        #breaks <- seq(floor(min(yH,na.rm=TRUE)),ceiling(max(yH,na.rm=TRUE)),length=100)
+        pdf <- dnorm(fit$y,mean=mean(yH,na.rm=TRUE), sd = sd(yH,na.rm=TRUE))
+        dist <- data.frame(y=coredata(yH))
+        #print(summary(dist))
         syH <- summary(yH)[c(1,4,6)]
-        if (input$timespace=='Statistics in the map') 
-          title <- paste(input$statistic,': ',paste(names(syH),round(syH,2),collapse=', ',sep='='),sep='') else
-          title <- loc(y)
-        print(title)
-        H <- plot_ly(dist,x=~x,y=~y,name='data',type='bar')
-        H = H %>% add_trace(x=dist$x,y=dist$pdf,name='pdf',mode='lines') %>% layout(title=title)
+        #print(syH); print(class(syH))
+        if (input$timespace=='Histogram_map') 
+          title <- paste(input$statistic,': ',paste(names(syH),round(syH,1),collapse=', ',sep='='),sep='') else
+          title <- paste(loc(y),': ',paste(syH,collapse=', ',sep='='),sep='')
+        #print(title)
+        H <- plot_ly(dist,x=~y,name='data',type='histogram',histnorm='probability')
+        H = H %>% add_trace(y=fit$x,x=pdf,name='pdf',mode='lines') %>% 
+          add_trace(x = fit$x, y = fit$y, mode = "lines", fill = "tozeroy", yaxis = "y2", name = "Density") %>%
+          layout(title=title)
+        #H = H %>% layout(title=title)
       } else {
         y <- subset(y0,it=input$dateRange)
         dim(y) <- NULL
@@ -384,8 +387,14 @@ server <- function(input, output, session) {
           ylab <- 'deg C'
         }
         title <- loc(y)
-        mac <- data.frame(y=as.monthly(y,FUN=FUN))
-        mac$Month <- month(as.monthly(y))
+        if (input$timespace=='Annual_cycle_month') {
+          mac <- data.frame(y=as.monthly(y,FUN=FUN)) 
+          mac$Month <- month(as.monthly(y))
+        } else {
+          mac <- data.frame(y) 
+          mac$Month <- month(y)  
+        }
+        
         print(summary(mac)); print(input$dateRange); print(title)
         AC <- plot_ly(mac,x=~Month,y=~y,name='mean_annual_cycle',type='box')  %>% 
           layout(title=title,yaxis=list(ylab))

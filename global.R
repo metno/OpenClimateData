@@ -17,7 +17,9 @@ library(shinydashboard)
 library(leaflet)
 library(plotly)
 
+## Functions used by the app: -------------------------------------------------------------------------------------
 
+## Organises the names of the statistic presented in the map and their appearances in the menu. Supports multiple languages
 type2name <-function(stattype,lingo) {
   type <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
             "mean","min","number.valid","records","trend","trend_wetfreq","trend_wetmean", 
@@ -44,6 +46,7 @@ type2name <-function(stattype,lingo) {
   return(descr)
 }
 
+## Extract the avaiable statistics to present on the map based on the aggregated statistics stored in the netCDF files
 getstattype <- function(fname,lingo=NULL) {
   print(paste('getstattype',fname))
   meta <- retrieve.stationsummary(fname)
@@ -81,25 +84,46 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin'),
   return(y)
 }
 
-print('---')
-verbose <-FALSE
-maintitle <- c('Meteorologisk institutt klimadata','','MET Norway / Climate record explorer')
+## The start-up settings - global variables etc used in the UI and server. Supports several languages
+print('--- <Initiatial settings> ---')
+## Defaults
+verbose <-FALSE                    ## For debugging
+lingo <- 1                         ## Default language option                
+first.location <- 'Oslo - blind'   ## Default location
+zoom <- 5                          ## Default zooming in the map
+reg1 <- 1                          ## Default source of dataset/region
 
-src <- c('metnod','ecad','ghcn','claris')
-regions <- rbind(c('Norge','Europa','Verden','Argentina'),
-                 c('Noreg','Europa','Verden','Argentina'),
-                 c('Norway','Europe','World','Argentine'))
+## Data sources - representing different regions
+src <- c('metnod','ecad','ghcn')
+## The labelling of the data sources in the menu
+regions <- rbind(c('Norge','Europa','Verden'),
+                 c('Noreg','Europa','Verden'),
+                 c('Norway','Europe','World'))
 names(src) <- regions[1,]
 
+## Seasons for the statistics presented in the maps
 sea <- c('All year'='all','Dec-Feb'='DJF',
          'Mar-May'='MAM','Jun-Aug'='JJA','Sep-Nov'='SON')
+## Seasons to present in the time series plots
 seaTS <- c('All year'='all','Dec-Feb'='DJF',
            'Mar-May'='MAM','Jun-Aug'='JJA','Sep-Nov'='SON',month.abb)
-thresholds <- seq(10,50,by=10)
-timespace <- c('Annual cycle','Timeseries selected in the box above','Statistics in the map')
 
+## Thesholds
+#thresholds <- seq(10,50,by=10)
+
+timespace <- c('Annual_cycle_month','Annual_cycle_day',
+               'Histogram_location','Histogram_map')
+timespacenames <- rbind(c('Sesongvariasjon på månedsbasis','Sesongvariasjon på dagsbasis',
+                          'Histogram for gitt sted','Statistikk for steder vist på kartet'),
+                        c('Sesongvariasjon på månedsbasis','Sesongvariasjon på dagsbasis',
+                          'Histogram for gitt sted','Statistikk for steder vist på kartet'),
+                        c('Annual cycle (monthly)','Annual cycle (daily)',
+                          'Histogram for selected location','Statstics for data shown in map'))
+names(timespace) <- timespacenames[1,]
+
+## Set the optional labels and titles in the menu based on chosen language 
 languages <- 1:3; language.names <- c('Bokmål','Nynorsk','English')
-maintitle <- c('Meteorologisk institutt klimadata','','MET Norway Climate records')
+maintitle <- c('Meteorologisk institutt klimadata','Meteorologisk institutt klimadata','MET Norway Climate records')
 maptitle <- c('Velg sted','Vel stad','Location selection')
 tstitle <- c('Tidsutvikling (historisk vær)','Tidsutvikling (historisk vêr)','Time series (past weather)')
 htitle <- c('Statistikk (historisk klima)','Statistikk (historisk klima)','Statistical distribution (past climate)')
@@ -134,12 +158,12 @@ lab.speficicday <- c('Utvalgt dag','Utvald dag','Specific day')
 aspects <- aspectsP
 tscales <- c("day","month","season","year"); names(tscales) <- tscales
 higlighting <- c('None','New records','Top 10','Low 10')
-lingo <- 1
-first.location <- 'Oslo - blind'
-zoom <- 5
-reg1 <- 1
 
-## Get the file names of the data
+##-----------------------------------------------------------------------------------------------------------
+
+names(languages) <- language.names
+
+## Get a list of files with data - Get the file names of the data
 fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
 fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
 fnames <- fnames[grep(src[reg1],fnames)]
@@ -150,7 +174,6 @@ varids <- varids[grep('.nc',varids,fixed=TRUE)]
 varids <- varids[grep(src[reg1],fnames)]
 varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
 names(varids) <- vari2name(varids)
-names(languages) <- language.names
 
 ## Setting for menues etc. 
 ci <- c(1:length(varids)); names(ci) <- varids
@@ -167,7 +190,7 @@ statisticmax <- round(max(Y$mean,na.rm=TRUE))
 
 filter <- rep(TRUE,length(Y$station.id))
 
-print('---')
+print('--- <Settings OK> ---')
 
 
 
