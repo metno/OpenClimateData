@@ -188,6 +188,7 @@ y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="Oslo - blind"],ve
 statisticmin <- round(min(Y$mean,na.rm=TRUE))
 statisticmax <- round(max(Y$mean,na.rm=TRUE))
 
+## The variable 'filter' is used for zoomin in on the data based on their range of values
 filter <- rep(TRUE,length(Y$station.id))
 
 print('--- <Settings OK> ---')

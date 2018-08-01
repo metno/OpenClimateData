@@ -267,6 +267,13 @@ server <- function(input, output, session) {
     #print('10 highs and lows')
     if (tolower(input$highlightTS)=='top 10') highlight10 <- y[order(coredata(y),decreasing=TRUE)[1:10]] else
       if (tolower(input$highlightTS)=='low 10') highlight10 <- y[order(coredata(y),decreasing=FALSE)[1:10]] else
+        if (tolower(input$highlightTS)=='new records') {
+          #print('new records')
+          dim(y) <- NULL
+          recs <- records(y)
+          #print(recs)
+          highlight10 <- y[attr(recs,'t')]
+        } else
         highlight10 <- y[1:10]+NA
     #print(highlight10)
     
@@ -297,6 +304,12 @@ server <- function(input, output, session) {
     
     if (tolower(input$higlight) == "top 10") highlight <- order(statistic[filter],decreasing=TRUE)[1:10] else 
     if (tolower(input$higlight) == "low 10") highlight <- order(statistic[filter],decreasing=FALSE)[1:10] else 
+    if (tolower(input$higlight) == "New records") {
+      if ( (!is-null(Y$last_element_highest)) & (!is-null(Y$last_element_lowest)) ) 
+            highlight <- Y$last_element_highest > 0 & Y$last_element_lowest > 0 else
+      if (!is-null(Y$last_element_highest)) highlight <- Y$last_element_highest > 0 else
+            highlight <- rep(FALSE,length(statistic))
+    } 
       highlight <- NULL
     lon.highlight <- Y$longitude[filter][highlight]
     lat.highlight <- Y$latitude[filter][highlight]
