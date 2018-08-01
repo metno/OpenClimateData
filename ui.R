@@ -15,7 +15,7 @@ ui <- dashboardPage(
                 choices= languages,selected='English'),
     selectInput("src", "Region", 
                 choices= src,selected='metnod'),
-    conditionalPanel(condition=c("input.statistic == 'Number_of_days'","input.aspect == 'Number_of_days'"),
+    conditionalPanel(condition="input.statistic == 'Number_of_days' || input.aspect == 'Number_of_days'",
                      numericInput("x0",textOutput("threshold"), 0))
     ),
   dashboardBody(

@@ -96,7 +96,8 @@ server <- function(input, output, session) {
           #print('...')
         }
       } 
-    if (input$statistic=='number.valid') Z <- 100*eval(parse(text=paste('Y$',input$statistic,sep='')))/attr(Y,'length')
+    if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
+    if (input$statistic=='records') Z <- 100*Z
     #print('Values returned by vals():');print(length(Z)); print(summary(Z)); print('---')
     return(Z) 
   })
@@ -174,7 +175,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$tscale, {
-    if (input$tscale=='season') newseaTS <- seaTS[1] else
+    if (input$tscale=='year') newseaTS <- seaTS[1] else
     if (input$tscale=='season') newseaTS <- seaTS[1:5] else newseaTS <- seaTS
     updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
   })
@@ -244,18 +245,19 @@ server <- function(input, output, session) {
     #if (is.null(FUN)) FUN='mean'
     
     ## Time series
-    #print('Time series')
-    x0 <- as.numeric(input$x0) 
+    print('Time series')
+    x0 <- as.numeric(input$x0)
     y0 <- y # Original daily data
     if (FUN != 'count') 
       y <- switch(input$tscale,
                   'day'=y,'month'=as.monthly(y,FUN=FUN),
                   'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN)) else
                     y <- switch(input$tscale,
-                                'day'=y,'month'=as.monthly(y,FUN=FUN,x0=x0),
-                                'season'=as.4seasons(y,FUN=FUN,x0=x0),'year'=as.annual(y,FUN=FUN,x0=x0))
+                                'day'=y,'month'=as.monthly(y,FUN=FUN,threshold=x0),
+                                'season'=as.4seasons(y,FUN=FUN,threshold=x0),
+                                'year'=as.annual(y,FUN=FUN,threshold=x0))
     #if (is.T(y)) browser()
-    #print(c(aspects,input$aspect)); print(input$ci)
+    print(c(aspects,input$aspect)); print(input$ci); print(x0); print(FUN); print(esd::unit(y))
     if (input$aspect=='anomaly') y <- anomaly(y)
     if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
     if (input$aspect=='wetfreq') {
@@ -385,8 +387,8 @@ server <- function(input, output, session) {
           title <- paste(loc(y),': ',paste(syH,collapse=', ',sep='='),sep='')
         #print(title)
         H <- plot_ly(dist,x=~y,name='data',type='histogram',histnorm='probability')
-        H = H %>% add_trace(y=fit$x,x=pdf,name='pdf',mode='lines') %>% 
-          add_trace(x = fit$x, y = fit$y, mode = "lines", fill = "tozeroy", yaxis = "y2", name = "Density") %>%
+        H = H %>% #add_trace(y=fit$x,x=pdf,name='pdf',mode='lines') %>% 
+          #add_trace(x = fit$x, y = fit$y, mode = "lines", fill = "tozeroy", yaxis = "y2", name = "Density") %>%
           layout(title=title)
         #H = H %>% layout(title=title)
       } else {

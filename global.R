@@ -26,20 +26,20 @@ type2name <-function(stattype,lingo) {
             "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows")
   names <- rbind(
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","Dager med data","Rekorder: registrert/(antall uten klimaendring)",
+      "Gjennomsnitt","Minimumsverdi","År med data","antall høye rekorder (%)",
       "Trend (per tiår)","Trend: dager med nedbør (%)","Trend: nedbørsintensitet", 
       "Dager med nedbør (%)","Typisk nedbørsintensitet (mm/dag)",
-      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Lave rekorder: registrert/(antall uten klimaendring)"),
+      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder (%)"),
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","Dager med data","Rekorder: registrert/(antall uten klimaendring)",
+      "Gjennomsnitt","Minimumsverdi","År med data","Rekorder: registrert/(antall uten klimaendring)",
       "Trend","Trend: dager med nedbør (%)","Trend: nedbørsintensitet", 
       "Dager med nedbør (%)","Typisk nedbørsintensitet (mm/dag)",
       "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Lave rekorder: registrert/(antall uten klimaendring)"),
     c("Altitude","Start year","Days without precipitation","End year","Latitude","Longitude","Maximum",           
-      "Average","Minimum","Number of measurements","Records: counted/(expected in stable climate)",
+      "Average","Minimum","Years with data"," Number of record-highs (%)",
       "Trend (per decade)","Trend in wet days","Trend in rain intensity", 
       "Number of wet days (%)","Mean rain intensity (mm/day)","Number of days above threshold",
-      "Specific date","Standard deviation","Low records: counted/(expected in stable climate)")
+      "Specific date","Standard deviation","Number of record-lows (%)")
   )
   matchingname <- names[as.numeric(lingo),]
   descr <- matchingname[match(tolower(stattype),tolower(type))]
