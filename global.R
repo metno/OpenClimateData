@@ -20,10 +20,7 @@ library(plotly)
 ## Functions used by the app: -------------------------------------------------------------------------------------
 
 ## Organises the names of the statistic presented in the map and their appearances in the menu. Supports multiple languages
-type2name <-function(stattype,lingo) {
-  type <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
-            "mean","min","number.valid","records","trend","trend_wetfreq","trend_wetmean", 
-            "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows")
+type2name <-function(stattype,lingo,types) {
   names <- rbind(
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
       "Gjennomsnitt","Minimumsverdi","År med data","antall høye rekorder (%)",
@@ -42,9 +39,58 @@ type2name <-function(stattype,lingo) {
       "Specific date","Standard deviation","Number of record-lows (%)")
   )
   matchingname <- names[as.numeric(lingo),]
-  descr <- matchingname[match(tolower(stattype),tolower(type))]
+  descr <- matchingname[match(tolower(stattype),tolower(types))]
   return(descr)
 }
+
+explainmapstatistic <- function(stattype,lingo,types) {
+  descriptions <- rbind(
+    c("Høyde over havet i meter (metadata)","Året da målingene startet (metadata)",
+      "Hvor mange dager det har gått uten nedbør",
+      "Siste år med målinger (metadata)","Målestasjonens breddegrad (metadata)",
+      "Målestasjoens lengdegrad (metadata)","Maksimumsverdi",           
+      "Gjennomsnittlig nedbørsmengde (mm) eller temperatur for et helt år eller sesong",
+      "Minste målte verdi","Hvor mye målledata som finnes (i antall år)",
+      "Forholdet (i %) mellom antall registrerte rekorder og hva man forventer i et stabilt klima",
+      "Trend (per tiår)","Trend i dager med nedbør (%/tiår)","Trend i nedbørsintensitet (mm/dag per tiår)", 
+      "Dager med nedbør (%)","Gjennomsnittlig nedbørsmengde for dager det regner mer enn 1mm (mm/dag)",
+      "Forventet antall dager over terskelverdi","Målte verdier for en valgt dag",
+      "Standardavvik av avvik fra normalen over et år eller en sesong",
+      "Forholdet (i %) mellom antall registrerte rekorder og hva man forventer i et stabilt klima"),
+    c("Høgde over havet i meter (metadata)","Året da mælingane starta (metadata)",
+      "Kor mange dagar det har gått utan nedbør",
+      "Siste år med mælinger (metadata)","Mælestasjonens breddegrad (metadata)",
+      "Mælestasjoens lengdegrad (metadata)","Maksimumsverdi",           
+      "Gjennomsnittleg nedbørsmengde (mm) eller temperatur for et heilt år eller sesong",
+      "Minste mælte verdi","Kor myke målledata som finnes (i antall år)",
+      "Forholdet (i %) mellom antall registrerte rekordar og kva ein forventar i eit stabilt klima",
+      "Trend (per tiår)","Trend i dagar med nedbør (%/tiår)","Trend i nedbørsintensitet (mm/dag per tiår)", 
+      "Dagar med nedbør (%)","Gjennomsnittleg nedbørsmengde for dager det regner meir enn 1mm (mm/dag)",
+      "Forventa antall dagar over terskelverdi","Mælte verdier for ein vald dag",
+      "Standardavvik av avvik fra normalen over eit år eller ein sesong",
+      "Forholdet (i %) mellom antall registrerte rekordar og kva ein forventer i eit stabilt klima"),
+    c("The elevation of the station in m above sea level (metadata))",
+      "The year when the observations started (metadata)","Number of days since it last rained",
+      "The last year with observations (metadata)","The latitude of the station in degrees north (metadata)",
+      "The longitude of the station in degrees east (metadata)","The highest recorded value",           
+      "The average year or season in terms of total precipitation or mean temperature",
+      "The smallest value","How many years there is with data (metadata)",
+      "The number of record-highs compared to expected number given a stable climate (%)",
+      "Trend (per decade)","Trend in number of wet days",
+      "Trend in the annual or seasonal wet-day mean precipitation", 
+      "The mean number of wet days over the whole year or seasons (%)",
+      "The mean wet-day mean precipitation over the whole year or seasons (mm/day)",
+      "The expected number of days above threshold",
+      "Observations made for a specific date",
+      "The standard deviation of anomalies over the whole year or seasons",
+      "The number of record-highs compared to expected number given a stable climate (%)")
+  )
+  print(paste('explainmapstatistic',lingo,stattype))
+  description <- descriptions[as.numeric(lingo),]
+  descr <- description[match(tolower(stattype),tolower(types))]
+  return(descr)
+}
+
 
 ## Extract the avaiable statistics to present on the map based on the aggregated statistics stored in the netCDF files
 getstattype <- function(fname,lingo=NULL) {
@@ -64,7 +110,7 @@ getstattype <- function(fname,lingo=NULL) {
   }
   stattype <- c(stattype,'Number_of_days','Specific_day')
   if (!is.null(lingo)) {
-    names(stattype) <- type2name(stattype,lingo)
+    names(stattype) <- type2name(stattype,lingo,types)
   }
   return(stattype)
 }
@@ -89,8 +135,8 @@ print('--- <Initiatial settings> ---')
 ## Defaults
 verbose <-FALSE                    ## For debugging
 lingo <- 1                         ## Default language option                
-first.location <- 'Oslo - blind'   ## Default location
-zoom <- 5                          ## Default zooming in the map
+#firstlocation <- 'Oslo - blind'   ## Default location
+#zoom <- 5                         ## Default zooming in the map
 reg1 <- 1                          ## Default source of dataset/region
 
 ## Data sources - representing different regions
@@ -100,6 +146,12 @@ regions <- rbind(c('Norge','Europa','Verden'),
                  c('Noreg','Europa','Verden'),
                  c('Norway','Europe','World'))
 names(src) <- regions[1,]
+descrlab <- c('Forklaring:','Forklaring:','Description:')
+
+## Types of statistics
+types <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
+           "mean","min","number.valid","records","trend","trend_wetfreq","trend_wetmean", 
+           "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows")
 
 ## Seasons for the statistics presented in the maps
 sea <- c('All year'='all','Dec-Feb'='DJF',
@@ -169,11 +221,12 @@ fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
 fnames <- fnames[grep(src[reg1],fnames)]
 
 ## Extract variables
-varids <- list.files(path='data',pattern='.nc',full.names = FALSE)
-varids <- varids[grep('.nc',varids,fixed=TRUE)]
+#varids <- list.files(path='data',pattern='.nc',full.names = FALSE)
+varids <- substr(fnames,6,nchar(fnames))
 varids <- varids[grep(src[reg1],fnames)]
 varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
 names(varids) <- vari2name(varids)
+print(varids)
 
 ## Setting for menues etc. 
 ci <- c(1:length(varids)); names(ci) <- varids
@@ -183,8 +236,13 @@ stattype <- getstattype(fnames[1])
 print(stattype); print(varids)
 
 ## Get the names of locations, etc.
+print('Get metadata & summary statistics')
 Y <- retrieve.stationsummary(fnames[1])
+print('Get first station')
 y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="Oslo - blind"],verbose=verbose)
+#y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="De bilt"],verbose=verbose)
+
+print('Get range for the sliding bar')
 statisticmin <- round(min(Y$mean,na.rm=TRUE))
 statisticmax <- round(max(Y$mean,na.rm=TRUE))
 
