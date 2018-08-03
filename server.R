@@ -252,7 +252,8 @@ server <- function(input, output, session) {
     Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
     print(input$location); print(fnames[as.numeric(input$ci)])
     statistic <- vals()
-    selectedStid <- Y$station.id[which(tolower(input$location) == tolower(Y$location))]
+    if ( (input$src=='ecad') & (input$location=='Oslo - blind') ) loc1 <- 'De bilt' else loc1 <- input$location
+    selectedStid <- Y$station.id[which(tolower(loc1) == tolower(Y$location))]
     ## Read single time series from the netCDF file
     print(paste('selectedID: ',selectedStid,' = ',input$location,'from',fnames[as.numeric(input$ci)]))
     if (is.null(selectedStid) | length(selectedStid)!=1) {
@@ -299,7 +300,6 @@ server <- function(input, output, session) {
     
     ## Marking the top and low 10 points
     print('10 highs and lows')
-    if (input$src=='ecad') browser()
     if (tolower(input$highlightTS)=='top 10') highlight10 <- y[order(coredata(y),decreasing=TRUE)[1:10]] else
       if (tolower(input$highlightTS)=='low 10') highlight10 <- y[order(coredata(y),decreasing=FALSE)[1:10]] else
         if (tolower(input$highlightTS)=='new records') {
@@ -364,13 +364,13 @@ server <- function(input, output, session) {
                        label = as.character(round(statistic[filter],digits = 2)),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
-                       radius =7,stroke=TRUE,weight = 1, color='black',
+                       radius =4,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
       addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
                        label=as.character(1:10),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
-                       radius=8,stroke=TRUE, weight=5, color='black',
+                       radius=5,stroke=TRUE, weight=5, color='black',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
       addLegend("bottomleft", pal=pal, values=round(statistic[filter], digits = 2), 
