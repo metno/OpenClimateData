@@ -110,7 +110,8 @@ server <- function(input, output, session) {
       } 
     if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
     if (input$statistic=='records') Z <- 100*Z
-    #print('Values returned by vals():');print(length(Z)); print(summary(Z)); print('---')
+    if (is.character(Z)) Z <- as.numeric(as.factor(Z))
+    print('Values returned by vals():');print(length(Z)); print(summary(Z)); print('---')
     return(Z) 
   })
   
@@ -129,15 +130,22 @@ server <- function(input, output, session) {
     
     varids <- substr(fnames,6,nchar(fnames))
     varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-    names(varids) <- vari2name(varids)
-    ci <- c(1:length(varids)); names(ci) <- varids
-    print('input$src - ci'); print(input$src); print(fnames)
+    ci <- c(1:length(varids)); names(ci) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
+    print('input$src - ci'); print(input$src); print(fnames); print(ci)
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=1)
     
     statistic <- vals()
     statisticmin <- round(min(statistic,na.rm=TRUE))
     statisticmax <- round(max(statistic,na.rm=TRUE))
     print(c(statisticmin,statisticmax))
+    updateSliderInput(session=session,inputId="statisticrange",
+                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+    
+    updateSelectInput(session=session,inputId="country",choices=c('All',rownames(table(Y$country))),selected='All')
+    
+    statisticmin <- round(min(statistic,na.rm=TRUE))
+    statisticmax <- round(max(statistic,na.rm=TRUE))
+    print('max & min')
     updateSliderInput(session=session,inputId="statisticrange",
                       min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
   })
@@ -220,6 +228,16 @@ server <- function(input, output, session) {
     if (input$tscale=='year') newseaTS <- seaTS[1] else
       if (input$tscale=='season') newseaTS <- seaTS[1:5] else newseaTS <- seaTS
       updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
+  })
+  
+  observeEvent(input$country, {
+    statistic <- vals()
+    if (input$country != 'All') statistic[!is.element(Y$country,input$country)] <- NA
+    statisticmin <- round(min(statistic,na.rm=TRUE))
+    statisticmax <- round(max(statistic,na.rm=TRUE))
+    print('max & min')
+    updateSliderInput(session=session,inputId="statisticrange",
+                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
   })
   
   ## Observe ---------------------------------------------------------------------------------------------------------
@@ -334,7 +352,10 @@ server <- function(input, output, session) {
     statistic <- vals()
     #print('Stastistic shown on map');print(summary(statistic))
     
-    filter <- rep(TRUE,length(statistic))
+    if (input$country=='All') filter <- rep(TRUE,length(statistic)) else {
+      filter <- rep(FALSE,length(statistic))
+      filter[(Y$country == input$country)] <- TRUE
+    }
     filter[statistic < input$statisticrange[1]] <- FALSE
     filter[statistic > input$statisticrange[2]] <- FALSE
     

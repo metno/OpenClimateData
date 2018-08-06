@@ -118,7 +118,7 @@ getstattype <- function(fname,lingo=NULL) {
 ## Plain text description of the statistics presented on the climate indicators for ordinary people.
 vari2name <- function(x,vars=c('pre','t2m','tmax','tmin'),
                       names=c('Precipitation','Daily mean temperature',
-                                'Daily max temperature','Daily min temperature'),nc=3) {
+                              'Daily max temperature','Daily min temperature'),nc=3) {
   y <- x
   if (length(vars) != length(names)) stop("vars have different length to names in 'variname'")
   for (i in 1:length(x)) {
@@ -245,6 +245,8 @@ y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="Oslo - blind"],ve
 print('Get range for the sliding bar')
 statisticmin <- round(min(Y$mean,na.rm=TRUE))
 statisticmax <- round(max(Y$mean,na.rm=TRUE))
+
+cntrs <- c('All',rownames(table(Y$country)))
 
 ## The variable 'filter' is used for zoomin in on the data based on their range of values
 filter <- rep(TRUE,length(Y$station.id))
