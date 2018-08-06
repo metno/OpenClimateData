@@ -134,10 +134,10 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin'),
 print('--- <Initiatial settings> ---')
 ## Defaults
 verbose <-FALSE                    ## For debugging
-lingo <- 1                         ## Default language option                
+lingo <- 3                         ## Default language option                
 #firstlocation <- 'Oslo - blind'   ## Default location
 #zoom <- 5                         ## Default zooming in the map
-reg1 <- 1                          ## Default source of dataset/region
+reg1 <- 2                          ## Default source of dataset/region
 
 ## Data sources - representing different regions
 src <- c('metnod','ecad','ghcn')

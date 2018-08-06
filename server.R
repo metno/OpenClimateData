@@ -65,6 +65,7 @@ server <- function(input, output, session) {
   
   # Computing indices
   vals <- reactive({
+    #browser()
     fnames <- updatefilenames()
     print(paste('vals: Y$',input$statistic,sep='')); print(fnames); print(input$ci)
     ## Get summary data from the netCDF file
@@ -117,14 +118,15 @@ server <- function(input, output, session) {
   ## Events ---------------------------------------------------------------------------------------------------------
   
   ## When new data source/region is selected
-  observeEvent(input$src,{
+  observe({
     ## Get the file names of the data
     fnames <- updatefilenames()
     Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
     print('input$src - location'); Y$location[1]
+    browser()
     loc1 <- switch(input$src,'metnod'='Oslo - blind','ecad'='De bilt','ghcnd'=Y$location[1])
     print(paste('New default location:',loc1))
-    updateSelectInput(session=session,inputId="location",choices=Y$location,selected=loc1)
+    updateSelectInput(session=session,inputId="location", choices = Y$location, selected=loc1)
     print(input$location)
     
     varids <- substr(fnames,6,nchar(fnames))

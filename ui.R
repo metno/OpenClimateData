@@ -14,7 +14,7 @@ ui <- dashboardPage(
     selectInput("lingo", "Language", 
                 choices= languages,selected='English'),
     selectInput("src", "Region", 
-                choices= src,selected='metnod'),
+                choices= src,selected='ecad'),
     conditionalPanel(condition="input.statistic == 'Number_of_days' || input.aspect == 'Number_of_days'",
                      numericInput("x0",textOutput("threshold"), 0))
     ),
@@ -23,8 +23,7 @@ ui <- dashboardPage(
       box(title=textOutput("maptitle"),status = "success",collapsed = FALSE, 
           collapsible = TRUE, width="100%", solidHeader = TRUE, 
           column(9,leafletOutput("map",height = 700)),
-          column(3,selectInput("location", textOutput("locationlabel"), 
-                               choices= Y$location), 
+          column(3,selectInput("location", textOutput("locationlabel"), choices= Y$location), 
                  selectInput("statistic", textOutput("statisticslabel"), 
                              choices= stattype,selected='mean'),
                  tags$h3(textOutput('mapdescription')),
