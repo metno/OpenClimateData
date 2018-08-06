@@ -111,7 +111,8 @@ server <- function(input, output, session) {
       } 
     if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
     if (input$statistic=='records') Z <- 100*Z
-    #print('Values returned by vals():');print(length(Z)); print(summary(Z)); print('---')
+    if (is.character(Z)) Z <- as.numeric(as.factor(Z))
+    print('Values returned by vals():');print(length(Z)); print(summary(Z)); print('---')
     return(Z) 
   })
   
@@ -131,15 +132,22 @@ server <- function(input, output, session) {
     
     varids <- substr(fnames,6,nchar(fnames))
     varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-    names(varids) <- vari2name(varids)
-    ci <- c(1:length(varids)); names(ci) <- varids
-    print('input$src - ci'); print(input$src); print(fnames)
+    ci <- c(1:length(varids)); names(ci) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
+    print('input$src - ci'); print(input$src); print(fnames); print(ci)
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=1)
     
     statistic <- vals()
     statisticmin <- round(min(statistic,na.rm=TRUE))
     statisticmax <- round(max(statistic,na.rm=TRUE))
     print(c(statisticmin,statisticmax))
+    updateSliderInput(session=session,inputId="statisticrange",
+                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+    
+    updateSelectInput(session=session,inputId="country",choices=c('All',rownames(table(Y$country))),selected='All')
+    
+    statisticmin <- round(min(statistic,na.rm=TRUE))
+    statisticmax <- round(max(statistic,na.rm=TRUE))
+    print('max & min')
     updateSliderInput(session=session,inputId="statisticrange",
                       min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
   })
@@ -224,6 +232,16 @@ server <- function(input, output, session) {
       updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
   })
   
+  observeEvent(input$country, {
+    statistic <- vals()
+    if (input$country != 'All') statistic[!is.element(Y$country,input$country)] <- NA
+    statisticmin <- round(min(statistic,na.rm=TRUE))
+    statisticmax <- round(max(statistic,na.rm=TRUE))
+    print('max & min')
+    updateSliderInput(session=session,inputId="statisticrange",
+                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+  })
+  
   ## Observe ---------------------------------------------------------------------------------------------------------
   
   # When map is clicked, show a popup with location info
@@ -254,7 +272,8 @@ server <- function(input, output, session) {
     Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
     print(input$location); print(fnames[as.numeric(input$ci)])
     statistic <- vals()
-    selectedStid <- Y$station.id[which(tolower(input$location) == tolower(Y$location))]
+    if ( (input$src=='ecad') & (input$location=='Oslo - blind') ) loc1 <- 'De bilt' else loc1 <- input$location
+    selectedStid <- Y$station.id[which(tolower(loc1) == tolower(Y$location))]
     ## Read single time series from the netCDF file
     print(paste('selectedID: ',selectedStid,' = ',input$location,'from',fnames[as.numeric(input$ci)]))
     if (is.null(selectedStid) | length(selectedStid)!=1) {
@@ -301,7 +320,6 @@ server <- function(input, output, session) {
     
     ## Marking the top and low 10 points
     print('10 highs and lows')
-    if (input$src=='ecad') browser()
     if (tolower(input$highlightTS)=='top 10') highlight10 <- y[order(coredata(y),decreasing=TRUE)[1:10]] else
       if (tolower(input$highlightTS)=='low 10') highlight10 <- y[order(coredata(y),decreasing=FALSE)[1:10]] else
         if (tolower(input$highlightTS)=='new records') {
@@ -336,7 +354,10 @@ server <- function(input, output, session) {
     statistic <- vals()
     #print('Stastistic shown on map');print(summary(statistic))
     
-    filter <- rep(TRUE,length(statistic))
+    if (input$country=='All') filter <- rep(TRUE,length(statistic)) else {
+      filter <- rep(FALSE,length(statistic))
+      filter[(Y$country == input$country)] <- TRUE
+    }
     filter[statistic < input$statisticrange[1]] <- FALSE
     filter[statistic > input$statisticrange[2]] <- FALSE
     
@@ -366,13 +387,13 @@ server <- function(input, output, session) {
                        label = as.character(round(statistic[filter],digits = 2)),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
-                       radius =7,stroke=TRUE,weight = 1, color='black',
+                       radius =4,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
       addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
                        label=as.character(1:10),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
-                       radius=8,stroke=TRUE, weight=5, color='black',
+                       radius=5,stroke=TRUE, weight=5, color='black',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
       addLegend("bottomleft", pal=pal, values=round(statistic[filter], digits = 2), 
