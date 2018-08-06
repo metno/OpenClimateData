@@ -134,13 +134,13 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin'),
 print('--- <Initiatial settings> ---')
 ## Defaults
 verbose <-FALSE                    ## For debugging
-lingo <- 3                         ## Default language option                
+lingo <- 1                         ## Default language option                
 #firstlocation <- 'Oslo - blind'   ## Default location
 #zoom <- 5                         ## Default zooming in the map
-reg1 <- 2                          ## Default source of dataset/region
+reg1 <- 1                          ## Default source of dataset/region
 
 ## Data sources - representing different regions
-src <- c('metnod','ecad','ghcn')
+src <- c('metnod','ecad','ghcnd')
 ## The labelling of the data sources in the menu
 regions <- rbind(c('Norge','Europa','Verden'),
                  c('Noreg','Europa','Verden'),
@@ -209,7 +209,7 @@ timescales <- rbind(c('Dag','Måned','Sesong','År'),
 lab.speficicday <- c('Utvalgt dag','Utvald dag','Specific day')
 aspects <- aspectsP
 tscales <- c("day","month","season","year"); names(tscales) <- tscales
-higlighting <- c('None','New records','Top 10','Low 10')
+highlighting <- c('None','New records','Top 10','Low 10')
 
 ##-----------------------------------------------------------------------------------------------------------
 
