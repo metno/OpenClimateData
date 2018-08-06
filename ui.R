@@ -76,7 +76,7 @@ ui <- dashboardPage(
           column(3,
                  selectInput("tscale", textOutput("timescalelabel"), choices= tscales, selected='year'),
                  selectInput("aspect", textOutput("aspectlabel"), choices= aspects,selected = aspects[1]),
-                 selectInput("highlightTS", textOutput("highlightTSlabel"), choices= higlighting),
+                 selectInput("highlightTS", textOutput("highlightTSlabel"), choices= highlighting),
                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS)
                  # conditionalPanel(condition="tscale == 'day'",
                  #                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))
