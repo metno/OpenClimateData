@@ -21,6 +21,37 @@ ui <- dashboardPage(
                      numericInput("x0",textOutput("threshold"), 0))
     ),
   dashboardBody(
+    #include google analytics
+                tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=UA-123370594-1'></script>
+                               <script>
+                               window.dataLayer = window.dataLayer || [];
+                               function gtag(){dataLayer.push(arguments);}
+                               gtag('js', new Date());
+                               gtag('config', 'UA-123370594-1', { 'anonymize_ip': true });
+                               </script>"
+                )),
+                tags$head(
+                  tags$style(
+                    HTML(".shiny-notification {
+                         position:fixed;
+                         top: calc(0%);;
+                         left: calc(5%);;
+                         }"
+            			)
+                    )
+                    ),
+    #send information to google analytics
+    #this includes the event name and the value it is set to
+    #omit sending plotting information (i.e., events starting with .client)
+    tags$script(HTML(
+                  "$(document).on('shiny:inputchanged', function(event) {
+                  if (event.name.substr(1,6) !== 'client') {
+                  newname = event.name+' set to '+event.value;
+                  gtag('event', newname, {'event_category': 'User interaction'});
+                  }
+                  });"
+    )), 
+
     fluidPage( 
       box(title=textOutput("maptitle"),status = "success",collapsed = FALSE, 
           collapsible = TRUE, width="100%", solidHeader = TRUE, 
