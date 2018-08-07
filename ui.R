@@ -18,7 +18,8 @@ ui <- dashboardPage(
     selectInput("country", "Show", 
                 choices= cntrs,selected='All'),
     conditionalPanel(condition="input.statistic == 'Number_of_days' || input.aspect == 'Number_of_days'",
-                     numericInput("x0",textOutput("threshold"), 0))
+                     numericInput("x0",textOutput("threshold"), 0)),
+    tags$p(textOutput("datainterval"))
     ),
   dashboardBody(
     #include google analytics

@@ -20,23 +20,25 @@ server <- function(input, output, session) {
     #print(paste('showMetaPopup() ===',stid,round(lat,2),round(lng,2)))
     fnames <- updatefilenames()
     Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
+    statistic <- vals()
     #print("Y <- retrieve.stationsummary")
     selLon <- round(Y$longitude[Y$station.id == stid],2)
     selLat <- round(Y$latitude[Y$station.id == stid],2)
     selAlt <- round(Y$altitude[Y$station.id == stid])
     location <- Y$location[Y$station.id == stid]
+    value <- paste(input$statistic,names(ci)[as.numeric(input$ci)],'=',round(statistic[Y$station.id == stid],1),collapse = ',')
     #print(c(stid,selLon,selLat,location))
     content <- paste(sep = "<br/>",
                      tags$strong(HTML(toupper(location))),
                      tags$strong(HTML(paste('LON ',selLon,'W',sep=''), 
                                       paste(' LAT ',selLat,'N',sep=''), 
                                       paste(' ALT ',selAlt,'m',sep=''))), 
-                     sprintf("Period: %s",paste(attr(Y,'period')[1],'-',attr(Y,'period')[2])),
+                     #sprintf("Period: %s",paste(attr(Y,'period')[1],'-',attr(Y,'period')[2])),
                      sprintf("Station ID: %s", as.character(stid)),
-                     sprintf("Element: %s", paste(toupper(varid(y)),collapse = ',')),
-                     #sprintf("Value: %s", paste(statistic[Y$station.id == stid],collapse = ',')),
-                     sprintf("Start year: %s", paste(Y$first.year[Y$station.id == stid],collapse = ',')),
-                     sprintf("End year: %s", paste(Y$last.year[Y$station.id == stid],collapse = ',')),
+                     #sprintf("Element: %s", paste(toupper(varid(y)),collapse = ',')),
+                     sprintf("%s", value),
+                     sprintf("Interval: %s", paste(Y$first.year[Y$station.id == stid],Y$last.year[Y$station.id == stid],sep = '-')),
+                     #sprintf("End year: %s", paste(Y$last.year[Y$station.id == stid],collapse = ',')),
                      sprintf("Data provider: Meteorologisk institutt"))
     
     leafletProxy("map") %>% addPopups(lng, lat, content,layerId = stid)
@@ -51,7 +53,7 @@ server <- function(input, output, session) {
   
   zoom <- reactive({
      zoomscale <- switch(input$src,
-                         'metnod'=4,'ecad'=3,'ghcnd'=1)
+                         'metnod'=5,'ecad'=4,'ghcnd'=2)
      return(zoomscale)
   })
   
@@ -544,5 +546,7 @@ server <- function(input, output, session) {
       lab.exclude[as.numeric(input$lingo)]})
     output$mapdescription <- renderText({
       paste(descrlab[as.numeric(input$lingo)],explainmapstatistic(input$statistic,input$lingo,types))})
+    output$datainterval <- renderText({
+    paste("-----(",attr(Y,'period')[1],' - ',attr(Y,'period')[2],")-----")})
   })
 }
