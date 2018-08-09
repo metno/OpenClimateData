@@ -15,11 +15,13 @@ ui <- dashboardPage(
                 choices= languages,selected='English'),
     selectInput("src", "Region", 
                 choices= src,selected='metnod'),
+    box(textOutput("datainterval"),background='black',width=12),
+    #tags$style(type="text/css", "#string { margine-left: 30px; margin-right: 30px; font-size: 30px;}"),
     selectInput("country", "Show", 
                 choices= cntrs,selected='All'),
     conditionalPanel(condition="input.statistic == 'Number_of_days' || input.aspect == 'Number_of_days'",
                      numericInput("x0",textOutput("threshold"), 0)),
-    tags$p(textOutput("datainterval"))
+    collapsed=FALSE
     ),
   dashboardBody(
     #include google analytics
@@ -60,7 +62,7 @@ ui <- dashboardPage(
           column(3,selectInput("location", textOutput("locationlabel"), choices= Y$location), 
                  selectInput("statistic", textOutput("statisticslabel"), 
                              choices= stattype,selected='mean'),
-                 tags$h3(textOutput('mapdescription')),
+                 box(tags$h4(textOutput('mapdescription')),width=12),
                  selectInput("season", textOutput("seasonlabel"), choices= sea),
                  conditionalPanel(condition="input.statistic == 'Specific_day'",
                                    dateInput("it",textOutput("daylabel"), value=Sys.Date()-1)),

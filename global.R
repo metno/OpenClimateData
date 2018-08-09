@@ -23,12 +23,12 @@ library(plotly)
 type2name <-function(stattype,lingo,types) {
   names <- rbind(
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","År med data","antall høye rekorder (%)",
+      "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder (%)",
       "Trend (per tiår)","Trend: dager med nedbør (%)","Trend: nedbørsintensitet", 
       "Dager med nedbør (%)","Typisk nedbørsintensitet (mm/dag)",
       "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder (%)"),
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","År med data","Rekorder: registrert/(antall uten klimaendring)",
+      "Gjennomsnitt","Minimumsverdi","Antall år med data","Rekorder: registrert/(antall uten klimaendring)",
       "Trend","Trend: dager med nedbør (%)","Trend: nedbørsintensitet", 
       "Dager med nedbør (%)","Typisk nedbørsintensitet (mm/dag)",
       "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Lave rekorder: registrert/(antall uten klimaendring)"),
@@ -50,7 +50,7 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Siste år med målinger (metadata)","Målestasjonens breddegrad (metadata)",
       "Målestasjoens lengdegrad (metadata)","Maksimumsverdi",           
       "Gjennomsnittlig nedbørsmengde (mm) eller temperatur for et helt år eller sesong",
-      "Minste målte verdi","Hvor mye målledata som finnes (i antall år)",
+      "Minste målte verdi","Hvor lang er måleserien (i antall år)",
       "Forholdet (i %) mellom antall registrerte rekorder og hva man forventer i et stabilt klima",
       "Trend (per tiår)","Trend i dager med nedbør (%/tiår)","Trend i nedbørsintensitet (mm/dag per tiår)", 
       "Dager med nedbør (%)","Gjennomsnittlig nedbørsmengde for dager det regner mer enn 1mm (mm/dag)",
@@ -147,6 +147,16 @@ regions <- rbind(c('Norge','Europa','Verden'),
                  c('Norway','Europe','World'))
 names(src) <- regions[1,]
 descrlab <- c('Forklaring:','Forklaring:','Description:')
+
+sources <- rbind(c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
+                   'Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
+                   'Up-to-date data from Met Norway. Only includes station series longer than 30 years.'),
+                 c('Åpne data fra European Climate and Assessment Dataset (ECA&D). Kilde: https://www.ecad.eu/',
+                   'Åpne data fra European Climate and Assessment Dataset (ECA&D). Kilde: https://www.ecad.eu/',
+                   'Open climate data from Climate and Assessment Dataset (ECA&D). Source: https://www.ecad.eu/'),
+                 c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                   'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                   'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'))
 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
