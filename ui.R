@@ -25,12 +25,13 @@ ui <- dashboardPage(
     ),
   dashboardBody(
     #include google analytics
-                tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=UA-123370594-1'></script>
+                #tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=UA-123370594-1'></script> # Internal
+                 tags$head(HTML("<script async src='https://www.googletagmanager.com/gtag/js?id=UA-108282573-5'></script> 
                                <script>
                                window.dataLayer = window.dataLayer || [];
                                function gtag(){dataLayer.push(arguments);}
                                gtag('js', new Date());
-                               gtag('config', 'UA-123370594-1', { 'anonymize_ip': true });
+                               gtag('config', 'UA-108282573-5', { 'anonymize_ip': true }); 
                                </script>"
                 )),
                 tags$head(
