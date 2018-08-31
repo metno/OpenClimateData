@@ -116,9 +116,12 @@ getstattype <- function(fname,lingo=NULL) {
 }
 
 ## Plain text description of the statistics presented on the climate indicators for ordinary people.
-vari2name <- function(x,vars=c('pre','t2m','tmax','tmin'),
+vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
+                               'cc','ss','pp','fg','fx','sd','dd'),
                       names=c('Precipitation','Daily mean temperature',
-                              'Daily max temperature','Daily min temperature'),nc=3) {
+                              'Daily max temperature','Daily min temperature',
+                              'Cloud cover','Sunshine','Pressure','Wind speed',
+                              'Wind gust','Snow depth','Wind direction'),nc=3) {
   y <- x
   if (length(vars) != length(names)) stop("vars have different length to names in 'variname'")
   for (i in 1:length(x)) {
@@ -210,9 +213,15 @@ aspectsT <- c("mean","anomaly","Number_of_days")
 aspectnameT <- rbind(c("Måling/Gjennomsnitt","Avvik fra normalen","Antall dager"),
                      c("Mæling/Gjennomsnitt","Avvik fra normalen","Antall dager"),
                      c("Mean","Anomaly","Number of days"))
-varnames=rbind(c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur'),
-               c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur'),
-               c('Precipitation','Daily mean temperature','Daily max temperature','Daily min temperature'))
+varnames=rbind(c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur',
+                 'Skydekke','Soltimer','Trykk','Vindhastighet',
+                 'Maks vindhastighet','Snødybde','Vindretning'),
+               c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur',
+                 'Skydekke','Soltimer','Trykk','Vindhastighet',
+                 'Maks vindhastighet','Snødybde','Vindretning'),
+               c('Precipitation','Daily mean temperature','Daily max temperature','Daily min temperature',
+                 'Cloud cover','Sunshine','Pressure','Wind speed',
+                 'Wind gust','Snow depth','Wind direction'))
 timescales <- rbind(c('Dag','Måned','Sesong','År'),
                     c('Dag','Måned','Sesong','År'),
                     c('Day','Month','Season','Year'))
@@ -236,7 +245,7 @@ varids <- substr(fnames,6,nchar(fnames))
 varids <- varids[grep(src[reg1],fnames)]
 varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
 names(varids) <- vari2name(varids)
-print(varids)
+#print(varids)
 
 ## Setting for menues etc. 
 ci <- c(1:length(varids)); names(ci) <- varids

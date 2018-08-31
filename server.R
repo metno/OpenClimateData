@@ -33,13 +33,10 @@ server <- function(input, output, session) {
                      tags$strong(HTML(paste('LON ',selLon,'W',sep=''), 
                                       paste(' LAT ',selLat,'N',sep=''), 
                                       paste(' ALT ',selAlt,'m',sep=''))), 
-                     #sprintf("Period: %s",paste(attr(Y,'period')[1],'-',attr(Y,'period')[2])),
                      sprintf("Station ID: %s", as.character(stid)),
-                     #sprintf("Element: %s", paste(toupper(varid(y)),collapse = ',')),
                      sprintf("%s", value),
-                     sprintf("Interval: %s", paste(Y$first.year[Y$station.id == stid],Y$last.year[Y$station.id == stid],sep = '-')),
-                     #sprintf("End year: %s", paste(Y$last.year[Y$station.id == stid],collapse = ',')),
-                     sprintf("Data provider: Meteorologisk institutt"))
+                     sprintf("Interval: %s", paste(Y$first.year[Y$station.id == stid],Y$last.year[Y$station.id == stid],sep = '-'))
+                     )
     
     leafletProxy("map") %>% addPopups(lng, lat, content,layerId = stid)
     #print('((()))')
@@ -64,6 +61,18 @@ server <- function(input, output, session) {
     #print(fnames); print(src); print(input$src)
     fnames <- fnames[grep(src[match(input$src,src)],fnames)]
     return(fnames)
+  })
+  
+  updatevarids <- reactive({
+    print('updatevarids')
+    fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+    fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
+    #print(fnames); print(src); print(input$src)
+    fnames <- fnames[grep(src[match(input$src,src)],fnames)]
+    varids <- substr(fnames,6,nchar(fnames))
+    varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
+    names(varids) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
+    return(varids)
   })
   
   # Computing indices
@@ -114,17 +123,18 @@ server <- function(input, output, session) {
     } 
     if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
     if (input$statistic=='records') Z <- 100*Z
+    Z[Z <= -99] <- NA
     print('Values returned by vals():');print(length(Z)); print(summary(Z)); print('---')
     return(Z) 
   })
   
   ## Events ---------------------------------------------------------------------------------------------------------
-  
+  ## Used to perform an action in response to an event. 
   
   ## Change climate indicator for all boxes (precip, temperature)
   observeEvent(input$ci, {
     print("observeEvent(input$ci")
-    #fnames <- updatefilenames()
+    fnames <- updatefilenames()
     Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
     #print('Update range')
     statistic <- vals()
@@ -136,7 +146,7 @@ server <- function(input, output, session) {
     updateSliderInput(session=session,inputId="statisticrange",
                       min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
     
-    if (as.numeric(input$ci)==1) {
+    if (!is.null(Y$wetmean)) {
       aspects <- aspectsP 
       names(aspects) <- aspectnameP[as.numeric(input$lingo),] 
     } else {
@@ -148,19 +158,23 @@ server <- function(input, output, session) {
     
     updateSelectInput(session=session,inputId="statistic",
                       choices=getstattype(fnames[as.numeric(input$ci)],lingo=input$lingo),selected="mean")
+    
+    loc1 <- switch(input$src,'metnod'='Oslo - blind','ecad'='De bilt','ghcnd'=Y$location[1])
+    #print(paste('New default location:',loc1))
+    updateSelectInput(session=session,inputId="location", choices = Y$location, selected=loc1)
   })
   
   ## Change language
   observeEvent(input$lingo, {
     print("observeEvent(input$lingo")
     #tscales <- c("day","month","season","year")
+    print(varids)
     names(tscales) <- timescales[as.numeric(input$lingo),]
     updateSelectInput(session=session,inputId="tscale",choices=tscales,selected=tscales[4])
     
-    varids <- 1:length(varids)
-    names(varids) <- varnames[as.numeric(input$lingo),]
-    #print(varids)
-    updateSelectInput(session=session,inputId="ci",choices=varids,selected=input$ci)
+    ci <- c(1:length(varids)); 
+    names(ci) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
+    updateSelectInput(session=session,inputId="ci",choices=ci,selected=input$ci)
     
     names(src) <- regions[as.numeric(input$lingo),]
     #print(src)
@@ -187,9 +201,8 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="location", choices = Y$location, selected=loc1)
     #print(input$location)
     
-    varids <- substr(fnames,6,nchar(fnames))
-    varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-    ci <- c(1:length(varids)); names(ci) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
+    varids <- updatevarids()
+    ci <- 1:length(varids); names(ci) <- names(varids)
     #print('input$src - ci'); print(input$src); print(fnames); print(ci)
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=1)
     
@@ -232,8 +245,8 @@ server <- function(input, output, session) {
     ## Click on the map marker
     observeEvent(input$map_marker_click,{
       print("observeEvent() - click")
-      #fnames <- updatefilenames()
-      #Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
+      fnames <- updatefilenames()
+      Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
       event <- input$map_marker_click
       #print(paste('Updated ',input$location)); print(event$id)
       selected <- which(Y$station.id == event$id)
@@ -262,11 +275,14 @@ server <- function(input, output, session) {
     })
     
     ## Observe ---------------------------------------------------------------------------------------------------------
+    ## Reactive expressions that read reactive values and call reactive expressions, and will automatically 
+    ## re-execute when those dependencies change.
     
     # When map is clicked, show a popup with location info
     observe({
       fnames <- updatefilenames()
       Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
+      print(Y$location[1:5])
       leafletProxy("map") %>% clearPopups()
       event <- input$map_marker_click
       #print('Data Explorer from map'); print(event$id)
@@ -288,8 +304,16 @@ server <- function(input, output, session) {
     observe({
       fnames <- updatefilenames()
       print('Data Explorer from roll-down menu')
+      print(input$location); print(input$ci); print(fnames[as.numeric(input$ci)])
       Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
-      print(input$location); print(fnames[as.numeric(input$ci)])
+      chosensite <- is.element(Y$location,input$location)
+      stid <- Y$station.id[chosensite]; lat <- Y$latitude[chosensite]; lng <- Y$longitude[chosensite]
+      print(c(stid,lat,lng))
+      
+      isolate({
+        showMetaPopup(stid=stid[1],lat=lat[1], lng = lng[1])
+      })
+      
       statistic <- vals()
       if ( (input$src=='ecad') & (input$location=='Oslo - blind') ) loc1 <- 'De bilt' else loc1 <- input$location
       selectedStid <- Y$station.id[which(tolower(loc1) == tolower(Y$location))]
