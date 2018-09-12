@@ -75,7 +75,7 @@ server <- function(input, output, session) {
     return(varids)
   })
   
-  # Computing indices
+  # Computing indices - values
   vals <- reactive({
     #browser()
     fnames <- updatefilenames()
