@@ -10,7 +10,7 @@ ui <- dashboardPage(
   skin="green",
   dashboardHeader(title = textOutput("maintitle")),
   dashboardSidebar(
-    selectInput("ci", "Climate Index", choices= ci),
+    selectInput("ci", "Climate Index", choices= ci, selected=ci[varids=='precip']),
     selectInput("lingo", "Language", 
                 choices= languages,selected='English'),
     selectInput("src", "Region", 
@@ -60,7 +60,8 @@ ui <- dashboardPage(
       box(title=textOutput("maptitle"),status = "success",collapsed = FALSE, 
           collapsible = TRUE, width="100%", solidHeader = TRUE, 
           column(9,leafletOutput("map",height = 700)),
-          column(3,selectInput("location", textOutput("locationlabel"), choices= Y$location), 
+          column(3,selectInput("location", textOutput("locationlabel"), choices= Y$location,
+                               selected = 'Oslo -blind'), 
                  selectInput("statistic", textOutput("statisticslabel"), 
                              choices= stattype,selected='mean'),
                  box(tags$h4(textOutput('mapdescription')),width=12),

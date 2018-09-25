@@ -94,7 +94,7 @@ explainmapstatistic <- function(stattype,lingo,types) {
 
 ## Extract the avaiable statistics to present on the map based on the aggregated statistics stored in the netCDF files
 getstattype <- function(fname,lingo=NULL) {
-  print(paste('getstattype',fname))
+  print(paste('getstattype',fname,lingo))
   meta <- retrieve.stationsummary(fname)
   doubleuscrs <- unlist(lapply(gregexpr('_',names(meta)),length)) > 1
   names(meta)[doubleuscrs] <- sub('_','-',names(meta)[doubleuscrs])
@@ -136,7 +136,7 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
 ## The start-up settings - global variables etc used in the UI and server. Supports several languages
 print('--- <Initiatial settings> ---')
 ## Defaults
-verbose <-FALSE                    ## For debugging
+verbose <-FALSE                     ## For debugging
 lingo <- 1                         ## Default language option                
 #firstlocation <- 'Oslo - blind'   ## Default location
 #zoom <- 5                         ## Default zooming in the map
@@ -244,21 +244,21 @@ fnames <- fnames[grep(src[reg1],fnames)]
 varids <- substr(fnames,6,nchar(fnames))
 varids <- varids[grep(src[reg1],fnames)]
 varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-names(varids) <- vari2name(varids)
 #print(varids)
 
 ## Setting for menues etc. 
-ci <- c(1:length(varids)); names(ci) <- varids
+ci <- c(1:length(varids)); names(ci) <- vari2name(varids)
 
 ## Extract information about summary statistics from the netCDF-files
-stattype <- getstattype(fnames[1])
+ipre <- ci[varids=='precip']
+stattype <- getstattype(fnames[ipre])
 print(stattype); print(varids)
 
 ## Get the names of locations, etc.
 print('Get metadata & summary statistics')
-Y <- retrieve.stationsummary(fnames[1])
+Y <- retrieve.stationsummary(fnames[ipre])
 print('Get first station')
-y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="Oslo - blind"],verbose=verbose)
+y <- retrieve.station(fnames[ipre],stid=Y$station.id[Y$location=="Oslo - blind"],verbose=verbose)
 #y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="De bilt"],verbose=verbose)
 
 print('Get range for the sliding bar')
