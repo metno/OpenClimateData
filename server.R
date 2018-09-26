@@ -55,7 +55,7 @@ server <- function(input, output, session) {
   
   zoom <- reactive({
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'ghcnd'=2)
+                        'metnod'=5,'ecad'=4,'ghcnd'=1)
     return(zoomscale)
   })
   
@@ -72,7 +72,6 @@ server <- function(input, output, session) {
     if (length(iss) > 0) is <- iss else is <- 1
     return(Y$station.id[is])
   })
-  
   
   updatefilenames <- reactive({
     print('updatefilenames')
@@ -95,15 +94,19 @@ server <- function(input, output, session) {
     return(varids)
   })
   
+  
   # Computing indices - values used in the map
   vals <- reactive({
     print('vals - reactive:')
     #browser()
     fnames <- updatefilenames()
-    Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
+    ii <- as.numeric(input$ci)
+    if (ii > length(fnames)) ii <- 1
+    Y <- retrieve.stationsummary(fnames[ii])
     #print(paste('vals: Y$',input$statistic,sep='')); print(fnames); print(input$ci)
     ## Get summary data from the netCDF file
-    print(summary(Y)); print(fnames[as.numeric(input$ci)])
+    
+    #print(summary(Y)); print(fnames[ii])
     showseason <- switch(input$season,
                          'all'='','DJF'='_DJF','MAM'='_MAM','JJA'='_JJA','SON'='_SON')
     print(paste('Y$',input$statistic,showseason,sep=''))
@@ -133,7 +136,7 @@ server <- function(input, output, session) {
         ## Get a specific date it
         it <- input$it
         print("Read a specific date from the netCDF file"); print(it)
-        x <- retrieve.station(fnames[as.numeric(input$ci)],it=it,verbose=verbose)
+        x <- retrieve.station(fnames[ii],it=it,verbose=verbose)
         Z <- c(coredata(x))
         dim(Z) <- c(length(Z),1)
         ## The stations are sorted according to alphabetic order
@@ -149,55 +152,111 @@ server <- function(input, output, session) {
     return(Z) 
   })
   
-  ## Events ---------------------------------------------------------------------------------------------------------
-  ## Used to perform an action in response to an event. 
   
-  ## When new data source/region is selected
-  observeEvent(input$src, {
-    ## Get the file names of the data
-    print("observeEvent(input$src")
+  ## Observe ---------------------------------------------------------------------------------------------------------
+  ## Reactive expressions that read reactive values and call reactive expressions, and will automatically 
+  ## re-execute when those dependencies change.
+  
+  # When something happens
+  observe({
     fnames <- updatefilenames()
-    Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
-    #print('input$src - location'); Y$location[1]
-    #browser()
-    loc1 <- switch(input$src,'metnod'='Oslo - blind','ecad'='De bilt','ghcnd'=Y$location[1])
-    print(paste('New default location:',loc1))
-    updateSelectInput(session=session,inputId="location", choices = Y$location, selected=loc1)
-    #print(input$location)
-    
-    varids <- updatevarids()
-    ci <- 1:length(varids); names(ci) <- names(varids)
-    print('input$src - ci'); print(input$src); print(fnames); print(ci)
-    prec <- ci[is.element(substr(varids,1,3),'pre')]
-    if (is.na(prec)) prec <- 1   ## "Safety option"
-    updateSelectInput(session=session,inputId="ci",choices=ci,selected=prec)
-    
+    ii <- as.numeric(input$ci)
+    if (ii > length(fnames)) ii <- 1
+    Y <- retrieve.stationsummary(fnames[ii])
     statistic <- vals()
-    filter <- rep(TRUE,length(vals))
-    statisticmin <- round(min(statistic,na.rm=TRUE))
-    statisticmax <- round(max(statistic,na.rm=TRUE))
-    print('Update slider range');  print(c(statisticmin,statisticmax))
-    updateSliderInput(session=session,inputId="statisticrange",
-                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
     
-    updateSelectInput(session=session,inputId="country",choices=c('All',rownames(table(Y$country))),selected='All')
-  })
-  
-  
-  ## Change climate indicator for all boxes (precip, temperature)
-  observeEvent(input$ci, {
-    print("observeEvent(input$ci")
-    fnames <- updatefilenames()
-    #print('Update range')
-    statistic <- vals()
-    filter <- rep(TRUE,length(statistic))
-    #print('statistics retrieved')
     if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
     statisticmin <- round(min(statistic,na.rm=TRUE),digits)
     statisticmax <- round(max(statistic,na.rm=TRUE),digits)
     print('max & min'); print(c(statisticmin,statisticmax))
     updateSliderInput(session=session,inputId="statisticrange",
                       min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+    
+    print(Y$location[1:5])
+    leafletProxy("map") %>% clearPopups()
+    event <- input$map_marker_click
+    #print('Data Explorer from map'); print(event$id)
+    
+    if (is.null(event))
+      return()
+    #print('Click --->'); print(event); print('<--- Click')
+    isolate({
+      showMetaPopup(stid=event$id,lat=event$lat, lng = event$lng)
+    })
+    
+    #removeMarker("map",layerId = event$id)
+    leafletProxy("map",data = event) %>% 
+      addCircles(lng = event$lng, lat = event$lat,color = 'red',layerId = 'selectID', weight = 12)
+    selectedStid <- event$id
+  })
+  
+  
+  ## Events ---------------------------------------------------------------------------------------------------------
+  ## Used to perform an action in response to an event. 
+  
+  ## When new data source/region is selected
+  observeEvent(input$src, {
+    ## Get the file names of the data
+    print("observeEvent(input$src"); print(input$src)
+    fnames <- updatefilenames()
+    print(fnames)
+    
+    varids <- updatevarids()
+    ci <- 1:length(varids); names(ci) <- names(varids)
+    print('input$src - ci')
+    print(ci)
+    prec <- ci[is.element(substr(varids,1,3),'pre')]
+    if (is.na(prec)) prec <- 1   ## "Safety option"
+    print(prec)
+    updateSelectInput(session=session,inputId="ci",choices=ci,selected=prec)
+    Y <- retrieve.stationsummary(fnames[prec])
+    
+    loc1 <- switch(input$src,'metnod'='Oslo - blind','ecad'='De bilt','ghcnd'=Y$location[1])
+    print(paste('New default location:',loc1))
+    updateSelectInput(session=session,inputId="location", choices = Y$location, selected=loc1)
+    #print(input$location)
+    
+    updateSelectInput(session=session,inputId="country",choices=c('All',rownames(table(Y$country))),
+                      selected='All')
+    
+    statistic <- Y$mean
+    filter <- rep(TRUE,length(vals))
+    # if (max(abs(statistic),na.rm=TRUE) > 10) digits <- 0 else digits <- 1
+    # statisticmin <- round(min(statistic,na.rm=TRUE),digits)
+    # statisticmax <- round(max(statistic,na.rm=TRUE),digits)
+    # print('Update slider range');  print(c(statisticmin,statisticmax))
+    # updateSliderInput(session=session,inputId="statisticrange",
+    #                   min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+    
+    if (!is.null(Y$wetmean)) {
+      aspects <- aspectsP 
+      names(aspects) <- aspectnameP[as.numeric(input$lingo),] 
+    } else {
+      aspects  <- aspectsT
+      names(aspects) <- aspectnameT[as.numeric(input$lingo),]
+    }                
+    #print(aspects)
+    updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
+  })
+  
+  
+  ## Change climate indicator for all boxes (precip, temperature)
+  observeEvent(input$ci, {
+    print("observeEvent(input$ci")
+    # fnames <- updatefilenames()
+    ii <- as.numeric(input$ci)
+    if (ii > length(fnames)) ii <- 1
+    # Y <- retrieve.stationsummary(fnames[ii])
+    #print('Update range')
+    # statistic <- vals()
+    filter <- rep(TRUE,length(Y$location))
+    #print('statistics retrieved')
+    # if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
+    # statisticmin <- round(min(statistic,na.rm=TRUE),digits)
+    # statisticmax <- round(max(statistic,na.rm=TRUE),digits)
+    # print('max & min'); print(c(statisticmin,statisticmax))
+    # updateSliderInput(session=session,inputId="statisticrange",
+    #                   min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
     
     if (!is.null(Y$wetmean)) {
       aspects <- aspectsP 
@@ -211,11 +270,11 @@ server <- function(input, output, session) {
     
     print(fnames); print(input$ci)
     updateSelectInput(session=session,inputId="statistic",
-                      choices=getstattype(fnames[as.numeric(input$ci)],lingo=input$lingo),selected="mean")
+                      choices=getstattype(fnames[ii],lingo=input$lingo),selected="mean")
     
-    loc1 <- switch(input$src,'metnod'='Oslo - blind','ecad'='De bilt','ghcnd'=Y$location[1])
-    #print(paste('New default location:',loc1))
-    updateSelectInput(session=session,inputId="location", choices = Y$location, selected=loc1)
+    # loc1 <- switch(input$src,'metnod'='Oslo - blind','ecad'='De bilt','ghcnd'=Y$location[1])
+    # #print(paste('New default location:',loc1))
+    # updateSelectInput(session=session,inputId="location", choices = Y$location, selected=loc1)
   })
   
   ## Change language
@@ -244,31 +303,31 @@ server <- function(input, output, session) {
   
   
   ## Change statistics to show in the map
-  observeEvent(input$statistic, {
-    print("observeEvent(input$statistic")
-    print(paste('Update range for',input$statistic))
-    statistic <- vals()
-    print('statistics retrieved')
-    if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
-    statisticmin <- round(min(statistic,na.rm=TRUE),digits)
-    statisticmax <- round(max(statistic,na.rm=TRUE),digits)
-    print('max & min'); print(c(statisticmin,statisticmax))
-    updateSliderInput(session=session,inputId="statisticrange",
-                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
-  })
+  # observeEvent(input$statistic, {
+  #   print("observeEvent(input$statistic")
+  #   print(paste('Update range for',input$statistic))
+  #   #statistic <- vals()
+  #   print('statistics retrieved')
+  #   if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
+  #   statisticmin <- round(min(statistic,na.rm=TRUE),digits)
+  #   statisticmax <- round(max(statistic,na.rm=TRUE),digits)
+  #   print('max & min'); print(c(statisticmin,statisticmax))
+  #   updateSliderInput(session=session,inputId="statisticrange",
+  #                     min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+  # })
   
-  observeEvent(input$season, {
-    print("observeEvent(input$season")
-    print(paste('Update range for',input$statistic))
-    statistic <- vals()
-    print('statistics retrieved')
-    if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
-    statisticmin <- round(min(statistic,na.rm=TRUE),digits)
-    statisticmax <- round(max(statistic,na.rm=TRUE),digits)
-    print('max & min'); print(c(statisticmin,statisticmax))
-    updateSliderInput(session=session,inputId="statisticrange",
-                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
-  })
+  # observeEvent(input$season, {
+  #   print("observeEvent(input$season")
+  #   print(paste('Update range for',input$statistic))
+  #   #statistic <- vals()
+  #   print('statistics retrieved')
+  #   if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
+  #   statisticmin <- round(min(statistic,na.rm=TRUE),digits)
+  #   statisticmax <- round(max(statistic,na.rm=TRUE),digits)
+  #   print('max & min'); print(c(statisticmin,statisticmax))
+  #   updateSliderInput(session=session,inputId="statisticrange",
+  #                     min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+  # })
   
   ## Click on the map marker
   observeEvent(input$map_marker_click,{
@@ -279,9 +338,20 @@ server <- function(input, output, session) {
     #print(paste('Updated ',input$location)); print(event$id)
     selected <- which(Y$station.id == event$id)
     #if (input$exclude== 'Selected') filter[selected] <- FALSE
-    updateSelectInput(session,inputId = 'location',label='Sted',choices=Y$location,
-                      selected = Y$location[selected])  
+    updateSelectInput(session,inputId = 'location',label=lab.location[as.numeric(input$lingo)],
+                      choices=Y$location,selected = Y$location[selected])  
   })
+  
+  ## Click on the map marker
+  # observeEvent(input$location,{
+  #   print("observeEvent() - location")
+  #   fnames <- updatefilenames()
+  #   Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
+  #   #print(paste('Updated ',input$location)); print(event$id)
+  #   selected <- which(tolower(Y$location) == tolower(input$location))
+  #   setView(lat=Y$latitude[selected],lng = Y$longitude[selected], zoom = zoom())  
+  # })
+  
   
   ## Change the time scale for the time series box
   observeEvent(input$tscale, {
@@ -291,45 +361,21 @@ server <- function(input, output, session) {
       updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
   })
   
-  observeEvent(input$country, {
-    print("observeEvent(input$country")
-    statistic <- vals()
-    if (input$country != 'All') statistic[!is.element(Y$country,input$country)] <- NA
-    if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
-    statisticmin <- round(min(statistic,na.rm=TRUE),digits)
-    statisticmax <- round(max(statistic,na.rm=TRUE),digits)
-    print('max & min'); print(c(statisticmin,statisticmax))
-    updateSliderInput(session=session,inputId="statisticrange",
-                      min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
-  })
+  # observeEvent(input$country, {
+  #   print("observeEvent(input$country")
+  #   statistic <- vals()
+  #   if (input$country != 'All') statistic[!is.element(Y$country,input$country)] <- NA
+  #   if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
+  #   statisticmin <- round(min(statistic,na.rm=TRUE),digits)
+  #   statisticmax <- round(max(statistic,na.rm=TRUE),digits)
+  #   print('max & min'); print(c(statisticmin,statisticmax))
+  #   updateSliderInput(session=session,inputId="statisticrange",
+  #                     min=statisticmin,max=statisticmax,value = c(statisticmin,statisticmax))
+  # })
   
-  observeEvent(input$location, {
-    selectedStid <- Y$station.id[which(tolower(input$location) == tolower(Y$location))]
-  })
-  
-  ## Observe ---------------------------------------------------------------------------------------------------------
-  ## Reactive expressions that read reactive values and call reactive expressions, and will automatically 
-  ## re-execute when those dependencies change.
-  
-  # When map is clicked, show a popup with location info
-  observe({
-    print(Y$location[1:5])
-    leafletProxy("map") %>% clearPopups()
-    event <- input$map_marker_click
-    #print('Data Explorer from map'); print(event$id)
-    
-    if (is.null(event))
-      return()
-    #print('Click --->'); print(event); print('<--- Click')
-    isolate({
-      showMetaPopup(stid=event$id,lat=event$lat, lng = event$lng)
-    })
-    
-    #removeMarker("map",layerId = event$id)
-    leafletProxy("map",data = event) %>% 
-      addCircles(lng = event$lng, lat = event$lat,color = 'red',layerId = 'selectID', weight = 12)
-    selectedStid <- event$id
-  })
+  # observeEvent(input$location, {
+  #   selectedStid <- Y$station.id[which(tolower(input$location) == tolower(Y$location))]
+  # })
   
   ## Output rendering ------------------------------------------------------------------------------------------------
   
@@ -338,7 +384,9 @@ server <- function(input, output, session) {
     ## Get summary data from the netCDF file
     fnames <- updatefilenames()
     #print('The map panel'); print(input$ci); print(fnames)
-    Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
+    ii <- as.numeric(input$ci)
+    if (ii > length(fnames)) ii <- 1
+    Y <- retrieve.stationsummary(fnames[ii])
     statistic <- vals()
     #print('Stastistic shown on map');print(summary(statistic))
     
@@ -378,6 +426,7 @@ server <- function(input, output, session) {
                     statistic[filter],bins = 10,pretty = TRUE,reverse=reverse)    
     legendtitle <- input$statistic
     if (legendtitle=='Specific_day') legendtitle=input$it
+    is <- which(tolower(Y$location) == tolower(input$location))
     
     leaflet() %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
@@ -401,31 +450,31 @@ server <- function(input, output, session) {
                        #addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
       ) %>% 
-      setView(lat=mean(Y$latitude),lng = mean(Y$longitude), zoom = zoom())
+      setView(lat=Y$latitude[is],lng = Y$longitude[is], zoom = zoom())
   })
   
   output$plotstation <- renderPlotly({
-    print('Time series'); 
+    print(paste('Time series',input$location)) 
     ## Read single time series from the netCDF file
-    selectedStid <- Y$station.id[is.element(tolower(Y$location),tolower(input$location))]
-    
-    print(paste('selectedID: ',selectedStid,' = ',input$location,'from',
-                fnames[as.numeric(input$ci)]))
-    if (is.null(selectedStid) | length(selectedStid)!=1) {
+    fnames <- updatefilenames()
+    #print('The map panel'); print(input$ci); print(fnames)
+    ii <- as.numeric(input$ci)
+    if (ii > length(fnames)) ii <- 1
+    Y <- retrieve.stationsummary(fnames[ii])
+    il <- is.element(tolower(Y$location),tolower(input$location))
+    if (sum(il)>0) selectedStid <- Y$station.id[il][1] else {
       print(input$location);print('Something is wrong!')
-      if (is.null(selectedStid)) selectedStid <- Y$station.id[1] else
-        if (length(selectedStid)>1) selectedStid <- selectedStid[1] else
-          selectedStid <- Y$station.id[1]
+      selectedStid <- getstid()
     }
     
-    if (sum(is.element(Y$station.id,selectedStid))==0) selectedStid <- getstid()
-    print("y <- retrieve.station"); print(selectedStid)
+    print(paste('selectedID: ',selectedStid,' = ',input$location,'from',fnames[ii]))
+    print("y <- retrieve.station")
     
-    y <- retrieve.station(fnames[as.numeric(input$ci)],stid=selectedStid,verbose=verbose)
+    y <- retrieve.station(fnames[ii],stid=selectedStid,verbose=verbose)
     
     #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
     
-    #print(input$season); print(input$tscale); print(input$aspect)
+    print(input$season); print(input$tscale); print(input$aspect)
     if (is.precip(y)) {
       if (input$aspect=='wetmean') FUN<-'wetmean' else
         if (input$aspect=='wetfreq') FUN<-'wetfreq' else
@@ -434,7 +483,7 @@ server <- function(input, output, session) {
     #if (is.null(FUN)) FUN='mean'
     
     ## Time series
-    print('Time series')
+    print(paste('Use',FUN,'to aggregate the time series. input$tscale=',input$tscale))
     x0 <- as.numeric(input$x0)
     y0 <- y # Original daily data
     if (FUN != 'count')
@@ -446,7 +495,7 @@ server <- function(input, output, session) {
                                 'season'=as.4seasons(y,FUN=FUN,threshold=x0,nmin=80),
                                 'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300))
     #if (is.T(y)) browser()
-    #print(c(aspects,input$aspect)); print(input$ci); print(x0); print(FUN); print(esd::unit(y))
+    print(c(aspects,input$aspect)); print(x0); print(esd::unit(y))
     if (input$aspect=='anomaly') y <- anomaly(y)
     if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
     if (input$aspect=='wetfreq') {
@@ -491,7 +540,10 @@ server <- function(input, output, session) {
     ## Get summary data from the netCDF file
     fnames <- updatefilenames()
     #print('The map panel'); print(input$ci); print(fnames)
-    Y <- retrieve.stationsummary(fnames[as.numeric(input$ci)])
+    ii <- as.numeric(input$ci)
+    if (ii > length(fnames)) ii <- 1
+    Y <- retrieve.stationsummary(fnames[ii])
+    #print('The map panel'); print(input$ci); print(fnames)
     statistic <- vals()
     
     ## Read single time series from the netCDF file
