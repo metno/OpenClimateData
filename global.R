@@ -210,9 +210,9 @@ aspectnameP <- rbind(c("Nedbørsmengde","Nedbørsfrekvens","Nedbørsintensitet",
                      c("Nedbørsmengde","Nedbørsfrekvens","Nedbørsintensitet","Antall dager med mye nedbør"),
                      c("Total amount","Rain frequency","Mean rain intensity","Days with heavy rain"))
 aspectsT <- c("mean","anomaly","Number_of_days")
-aspectnameT <- rbind(c("Måling/Gjennomsnitt","Avvik fra normalen","Antall dager"),
-                     c("Mæling/Gjennomsnitt","Avvik fra normalen","Antall dager"),
-                     c("Mean","Anomaly","Number of days"))
+aspectnameT <- rbind(c("Målt","Avvik fra normalen","Antall dager"),
+                     c("Mæling","Avvik fra normalen","Antall dager"),
+                     c("Measured","Anomaly","Number of days"))
 varnames=rbind(c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur',
                  'Skydekke','Soltimer','Trykk','Vindhastighet',
                  'Maks vindhastighet','Snødybde','Vindretning'),

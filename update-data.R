@@ -2,7 +2,7 @@
 
 library(esd)
 ##Parameters to display
-params <- c('tmax','tmin','precip','t2m','fg','fx','dd')
+params <- c('tmax','tmin','precip','t2m','fg','fx','dd','sd')
 
 for (param in params) {  
   print(param)
