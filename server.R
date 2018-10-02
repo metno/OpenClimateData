@@ -438,7 +438,7 @@ server <- function(input, output, session) {
     is <- which(tolower(Y$location) == tolower(input$location))
     
     print('The map is being rendered')
-    leaflet() %>% 
+    leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
                        lat = Y$latitude[filter],fill = TRUE, # latitude
                        label = as.character(round(statistic[filter],digits = 2)),
