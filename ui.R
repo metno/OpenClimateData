@@ -61,7 +61,7 @@ ui <- dashboardPage(
           collapsible = TRUE, width="100%", solidHeader = TRUE, 
           column(9,leafletOutput("map",height = 700)),
           column(3,selectInput("location", textOutput("locationlabel"), choices= Y$location,
-                               selected = 'Oslo -blind'), 
+                               selected = 'Oslo - blind'), 
                  selectInput("statistic", textOutput("statisticslabel"), 
                              choices= stattype,selected='mean'),
                  box(tags$h4(textOutput('mapdescription')),width=12),
