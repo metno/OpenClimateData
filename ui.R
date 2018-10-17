@@ -121,9 +121,13 @@ ui <- dashboardPage(
                  ". The source code for this app is available from ",
                  tags$a(href="https:github.com/metno/OpenClimateData","github.com/metno/OpenClimateData")),
                  tags$br(),
+                 tags$h1("Help, tips and assistance"),
+                 tags$p("We have used a wiki-page to",
+                 tags$a(href="https://github.com/metno/OpenClimateData/wiki","help"),
+                 "you to install this prototype and to provide more information about it."),
                  tags$h1("Comments and feedbacks"),
                  tags$p("Do you have any comments or feedbacks? If so, please respond through this",
-                 tags$a(href="https://goo.gl/forms/GuzqO1GIUFfz5L2K2","link"))
+                tags$a(href="https://goo.gl/forms/GuzqO1GIUFfz5L2K2","link"))
         )
     ))
 ))
