@@ -69,7 +69,7 @@ ui <- dashboardPage(
                  box(tags$h4(textOutput('mapdescription')),width=12),
                  selectInput("season", textOutput("seasonlabel"), choices= sea),
                  conditionalPanel(condition="input.statistic == 'Specific_day'",
-                                   dateInput("it",textOutput("daylabel"), value=Sys.Date()-1)),
+                                   dateInput("it",textOutput("daylabel"), value=attr(Y,'period')[2])),
                  selectInput("highlight", textOutput("highlightlabel"), choices= highlighting),
                  sliderInput("statisticrange", "Range:", min = statisticmin, max=statisticmax, 
                              value = c(statisticmin,statisticmax),sep='',round=TRUE)

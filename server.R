@@ -23,7 +23,6 @@ server <- function(input, output, session) {
     if (length(lng)>1) lng <- lng[1]
     
     print(paste('showMetaPopup() ===',stid,round(lat,2),round(lng,2),ci))
-    fnames <- updatefilenames()
     Y <- updatemetadata()
     statistic <- vals()
     #print("Y <- retrieve.stationsummary")
@@ -63,6 +62,15 @@ server <- function(input, output, session) {
     return(fnames)
   })
   
+  updatefile <- reactive({
+    print('reactive - updatemetadata()')
+    fnames <- updatefilenames()
+    print(fnames); print(input$ci)
+    ii <- as.numeric(input$ci)
+    return(fnames[ii])
+  })
+  
+  
   updatevarids <- reactive({
     print('reactive - updatevarids()')
     fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
@@ -89,12 +97,8 @@ server <- function(input, output, session) {
   
   updatemetadata <- reactive({
     print('reactive - updatemetadata()')
-    fnames <- updatefilenames()
-    print(fnames); print(input$ci)
-    ii <- as.numeric(input$ci)
-    if (ii > length(fnames)) ii <- 1
-    Y <- retrieve.stationsummary(fnames[ii])
-    print(paste('Retrieved from ',fnames[ii])); print(dim(Y))
+    Y <- retrieve.stationsummary(updatefile())
+    print(paste('Retrieved from ',updatefile())); print(dim(Y))
     return(Y)
   })
   
@@ -112,18 +116,15 @@ server <- function(input, output, session) {
   updatestation <- reactive({
     print('reactive - updatestation()')
     Y <- updatemetadata()
-    fnames <- updatefilenames()
-    ii <- as.numeric(input$ci)
-    if (ii > length(fnames)) ii <- 1
-    Y <- retrieve.stationsummary(fnames[ii])
+    Y <- retrieve.stationsummary(updatefile())
     il <- is.element(tolower(Y$location),tolower(input$location))
     if (sum(il)>0) selectedStid <- Y$station.id[il][1] else {
       print(input$location);print('Something is wrong!')
       selectedStid <- getstid()
     }
-    print(paste('selectedID: ',selectedStid,' = ',input$location,'from',fnames[ii]))
-    print(paste("y <- retrieve.station(",fnames[ii],selectedStid,")"))
-    y <- retrieve.station(fnames[ii],stid=selectedStid,verbose=verbose)
+    print(paste('selectedID: ',selectedStid,' = ',input$location,'from',updatefile()))
+    print(paste("y <- retrieve.station(",updatefile(),selectedStid,")"))
+    y <- retrieve.station(updatefile(),stid=selectedStid,verbose=verbose)
     return(y)
   })
   
@@ -145,7 +146,7 @@ server <- function(input, output, session) {
     
     ## Get summary data from the netCDF file
     Y <-updatemetadata()  
-    #print(summary(Y)); print(fnames[ii])
+    #print(summary(Y))
     showseason <- switch(input$season,
                          'all'='','DJF'='_DJF','MAM'='_MAM','JJA'='_JJA','SON'='_SON')
     print(paste('Y$',input$statistic,showseason,sep=''))
@@ -174,14 +175,15 @@ server <- function(input, output, session) {
       } else {
         ## Get a specific date it
         it <- input$it
-        print("Read a specific date from the netCDF file"); print(it)
-        x <- retrieve.station(fnames[ii],it=it,verbose=verbose)
+        print("Read a specific date from the netCDF file"); print(it); print(updatefile())
+        x <- retrieve.station(updatefile(),it=it,verbose=verbose)
         Z <- c(coredata(x))
         dim(Z) <- c(length(Z),1)
         ## The stations are sorted according to alphabetic order
         Z <- Z[match(Y$station.id,stid(x))]
-        #print(rbind(stid(x),Y$station.id))
-        #print('...')
+        print(rbind(stid(x),Y$station.id))
+        print(summary(Z))
+        print('...')
       }
     } 
     if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
@@ -350,10 +352,8 @@ server <- function(input, output, session) {
 
   observe({
     print('observe - Update statistics')
-    ii <- as.numeric(input$ci)
-    if (ii > length(fnames)) ii <- 1
     updateSelectInput(session=session,inputId="statistic",
-                      choices=getstattype(fnames[ii],lingo=input$lingo),selected="mean")
+                      choices=getstattype(updatefile(),lingo=input$lingo),selected="mean")
   })
   
   observe({
