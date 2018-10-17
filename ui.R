@@ -2,13 +2,15 @@
 ## Rasmus Benestad
 # Load libraries
 
+##<div id="OpenClimateDataPrototype" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+  
 r_colors <- rgb(t(col2rgb(colors()) / 255))
 names(r_colors) <- colors()
 ###----------------------------------
 
 ui <- dashboardPage(
   skin="green",
-  dashboardHeader(title = textOutput("maintitle")),
+  dashboardHeader(title = textOutput("OpenClimateDataPrototype")),
   dashboardSidebar(
     selectInput("ci", "Climate Index", choices= ci, selected=ci[varids=='precip']),
     selectInput("lingo", "Language", 
