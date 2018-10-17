@@ -124,7 +124,8 @@ ui <- dashboardPage(
                  tags$h1("Help, tips and assistance"),
                  tags$p("We have used a wiki-page to",
                  tags$a(href="https://github.com/metno/OpenClimateData/wiki","help"),
-                 "you to install this prototype and to provide more information about it."),
+                 "you to install this prototype and to provide more information about it. Please use the ",
+                 tags$a(href="https://github.com/metno/OpenClimateData/issues","'Issues'"), " page if you have any problem that is not described on he wiki-page"),
                  tags$h1("Comments and feedbacks"),
                  tags$p("Do you have any comments or feedbacks? If so, please respond through this",
                 tags$a(href="https://goo.gl/forms/GuzqO1GIUFfz5L2K2","link"))
