@@ -85,7 +85,7 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "The standard deviation of anomalies over the whole year or seasons",
       "The number of record-highs compared to expected number given a stable climate (%)")
   )
-  print(paste('explainmapstatistic',lingo,stattype))
+  print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
   descr <- description[match(tolower(stattype),tolower(types))]
   return(descr)
