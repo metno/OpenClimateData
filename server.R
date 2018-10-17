@@ -63,10 +63,16 @@ server <- function(input, output, session) {
   })
   
   updatefile <- reactive({
-    print('reactive - updatemetadata()')
+    print('reactive - updatefile()')
     fnames <- updatefilenames()
-    print(fnames); print(input$ci)
     ii <- as.numeric(input$ci)
+    ## If the climate index is not updated, try to chose the right climate index
+    if (ii > length(fnames)) {
+      print('ii is outside range of index')
+      varids <- updatevarids()
+      ii <- (1:length(varids))[is.element(varids,'precip')]
+    }
+    print(input$ci); print(fnames[ii])
     return(fnames[ii])
   })
   
@@ -329,6 +335,8 @@ server <- function(input, output, session) {
 
   observe({
     print('observe - Update aspects')
+    varids <- updatevarids()
+    print(varids)
     if (varids[as.numeric(input$ci)]=='precip') {
       aspects <- aspectsP
       names(aspects) <- aspectnameP[as.numeric(input$lingo),]
