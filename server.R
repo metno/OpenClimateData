@@ -92,7 +92,7 @@ server <- function(input, output, session) {
     ci <- updateci()
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=input$ci)
     
-    names(src) <- regions[as.numeric(input$lingo),]
+    names(src) <- regions[as.numeric(input$lingo),match(src,source.regions)]
     #print(src)
     updateSelectInput(session=session,inputId="src",choices=src,selected=input$src)
     
@@ -178,25 +178,6 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="country",choices=c('All',rownames(table(Y$country))),
                       selected='All')
   })
-  
-  # observe({
-  #   print('observe - marker click')
-  #   #leafletProxy("map") %>% clearPopups()
-  #   event <- input$map_marker_click
-  #   #print('Data Explorer from map'); print(event$id)
-  #   if (is.null(event))
-  #     return()
-  #   #print('Click --->'); print(event); print('<--- Click')
-  #   isolate({
-  #     showMetaPopup(mapid,stid=event$id,lat=event$lat, lng = event$lng,ci = as.numeric(input$ci))
-  #   })
-  #   
-  #   #removeMarker("map",layerId = event$id)
-  #   leafletProxy("mapid",data = event) %>%
-  #     addCircles(lng = event$lng, lat = event$lat,color = 'red',layerId = 'selectID', weight = 12)
-  #   
-  #   #selectedStid <- event$id
-  # })
   
   ## Reactive expressions to update information -------------------------------------------------------------- 
   
@@ -287,6 +268,46 @@ server <- function(input, output, session) {
     return(y)
   })
   
+  updatetimeseries <- reactive({
+    y <- updatestation()
+    if (is.precip(y)) {
+      if (input$aspect=='wetmean') FUN<-'wetmean' else
+        if (input$aspect=='wetfreq') FUN<-'wetfreq' else
+          #if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'sum'
+          if (input$aspect=="Number_of_days") {
+            y <- test.rainequation(y,x0=input$x0,plot=FALSE)
+            return(y)
+          } else FUN<- 'sum'
+    } else if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'mean'
+    #if (is.null(FUN)) FUN='mean'
+    
+    x0 <- as.numeric(input$x0)
+    
+    ## Time series
+    if (input$tscale != 'day') {
+      print(paste('Use',FUN,'to aggregate the time series. input$tscale=',input$tscale))
+      print(c(aspects,input$aspect)); print(x0); print(esd::unit(y))
+    }
+    
+    if (FUN != 'count')
+      y <- switch(input$tscale,
+                  'day'=y,'month'=as.monthly(y,FUN=FUN),
+                  'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN,nmin=300)) else
+                    y <- switch(input$tscale,
+                                'day'=y,'month'=as.monthly(y,FUN=FUN,threshold=x0,nmin=25),
+                                'season'=as.4seasons(y,FUN=FUN,threshold=x0,nmin=80),
+                                'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300))
+    #if (is.T(y)) browser()
+    
+    if (input$aspect=='anomaly') y <- anomaly(y)
+    if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
+    if (input$aspect=='wetfreq') {
+      y <- 100*y
+      attr(y,'unit') <- '%'
+    }
+    return(y)
+  })
+  
   locations <- reactive({
     Y <- updatemetadata()
     return(Y$location)
@@ -295,7 +316,7 @@ server <- function(input, output, session) {
   ## The following are more general ractive expressions
   zoom <- reactive({
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'ghcnd'=1)
+                        'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=3)
     return(zoomscale)
   })
   
@@ -434,46 +455,35 @@ server <- function(input, output, session) {
       setView(lat=Y$latitude[is],lng = Y$longitude[is], zoom = zoom())
   })
   
+  observe({
+    print('observe - marker click')
+    leafletProxy("mapid") %>% clearPopups()
+    event <- input$map_marker_click
+    #print('Data Explorer from map'); print(event$id)
+    if (is.null(event))
+      return()
+    #print('Click --->'); print(event); print('<--- Click')
+    isolate({
+      showMetaPopup("mapid",stid=event$id,lat=event$lat, lng = event$lng,ci = as.numeric(input$ci))
+    })
+
+    #removeMarker("map",layerId = event$id)
+    leafletProxy("mapid",data = event) %>%
+      addCircles(lng = event$lng, lat = event$lat,color = 'red',layerId = 'selectID', weight = 12)
+
+    #selectedStid <- event$id
+  })
+  
+  
   output$plotstation <- renderPlotly({
     print('output$plotstation - render')
     print(paste('Time series for',input$location,'ci=',input$ci,'season=',input$season,
                          'tscale=',input$tscale,'aspect=',input$aspect))
-    y <- updatestation()
+    y <- updatetimeseries()
     
     #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
     
-    if (is.precip(y)) {
-      if (input$aspect=='wetmean') FUN<-'wetmean' else
-        if (input$aspect=='wetfreq') FUN<-'wetfreq' else
-          if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'sum'
-    } else if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'mean'
-    #if (is.null(FUN)) FUN='mean'
     
-    x0 <- as.numeric(input$x0)
-    
-    ## Time series
-    if (input$tscale != 'day') {
-      print(paste('Use',FUN,'to aggregate the time series. input$tscale=',input$tscale))
-      print(c(aspects,input$aspect)); print(x0); print(esd::unit(y))
-    }
-    
-    y0 <- y # Original daily data
-    if (FUN != 'count')
-      y <- switch(input$tscale,
-                  'day'=y,'month'=as.monthly(y,FUN=FUN),
-                  'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN,nmin=300)) else
-                    y <- switch(input$tscale,
-                                'day'=y,'month'=as.monthly(y,FUN=FUN,threshold=x0,nmin=25),
-                                'season'=as.4seasons(y,FUN=FUN,threshold=x0,nmin=80),
-                                'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300))
-    #if (is.T(y)) browser()
-    
-    if (input$aspect=='anomaly') y <- anomaly(y)
-    if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
-    if (input$aspect=='wetfreq') {
-      y <- 100*y
-      attr(y,'unit') <- '%'
-    }
     
     ## Marking the top and low 10 points
     #print('10 highs and lows')
@@ -498,12 +508,23 @@ server <- function(input, output, session) {
                    Sys.sleep(0.05)}
                  })
     
-    timeseries <- data.frame(date=index(y),y=coredata(y),trend=coredata(trend(y)))
+    
     print('The timeseries is being rendered')
-    TS <- plot_ly(timeseries,x=~date,y=~y,type = 'scatter',mode='lines',name='data')
-    TS = TS %>% add_trace(y=~trend,name='trend') %>% 
-      add_markers(x=index(highlight10),y=coredata(highlight10),label=input$highlightTS) %>% 
-      layout(title=loc(y),yaxis = list(title=esd::unit(y)))
+    if ( (is.precip(y)) & (input$aspect=="Number_of_days") ) {
+      timeseries <- data.frame(date=index(y),pr=coredata(y[,1]),obs= coredata(y[,2]),
+                               trend=coredata(trend(y[,2])))
+      TS <- plot_ly(timeseries,x=~date,y=~obs,type = 'scatter',mode='lines',name='observed')
+      TS <- TS %>% add_trace(y=~trend,name='trend') %>% 
+        add_lines(timeseries,x=~date,y=~pr,type = 'scatter',mode='lines',name='predicted',color='red') %>%
+        add_markers(x=index(highlight10),y=coredata(highlight10),label=input$highlightTS) %>% 
+        layout(title=loc(y),yaxis = list(title=esd::unit(y)))
+    } else {
+      timeseries <- data.frame(date=index(y),y=coredata(y),trend=coredata(trend(y)))
+      TS <- plot_ly(timeseries,x=~date,y=~y,type = 'scatter',mode='lines',name='data')
+      TS = TS %>% add_trace(y=~trend,name='trend') %>% 
+        add_markers(x=index(highlight10),y=coredata(highlight10),label=input$highlightTS) %>% 
+        layout(title=loc(y),yaxis = list(title=esd::unit(y)))
+    }
     #TS$elementID <- NULL
     
   })
@@ -515,37 +536,9 @@ server <- function(input, output, session) {
     ## Get summary data from the netCDF file
     Y <- updatemetadata()
     statistic <- vals()
-    y <- updatestation()
+    y0 <- updatestation()
+    y <- updatetimeseries()
     
-    #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
-    
-    if (is.precip(y)) {
-      if (input$aspect=='wetmean') FUN<-'wetmean' else
-        if (input$aspect=='wetfreq') FUN<-'wetfreq' else
-          if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'sum'
-    } else if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'mean'
-    #if (is.null(FUN)) FUN='mean'
-    
-    ## Selected site
-    print(paste('Selected site=',loc(y),stid(y)))
-    x0 <- as.numeric(input$x0)
-    y0 <- y # Original daily data
-    if (FUN != 'count')
-      y <- switch(input$tscale,
-                  'day'=y,'month'=as.monthly(y,FUN=FUN),
-                  'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN,nmin=300)) else
-                    y <- switch(input$tscale,
-                                'day'=y,'month'=as.monthly(y,FUN=FUN,threshold=x0,nmin=25),
-                                'season'=as.4seasons(y,FUN=FUN,threshold=x0,nmin=80),
-                                'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300))
-    #if (is.T(y)) browser()
-    #print(c(aspects,input$aspect)); print(input$ci); print(x0); print(FUN); print(esd::unit(y))
-    if (input$aspect=='anomaly') y <- anomaly(y)
-    if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
-    if (input$aspect=='wetfreq') {
-      y <- 100*y
-      attr(y,'unit') <- '%'
-    }
     if (input$timespace == 'Histogram_location') yH <- coredata(y) else yH <- statistic
     
     withProgress(message = 'Updating ...',
@@ -576,7 +569,7 @@ server <- function(input, output, session) {
         layout(title=title)
       #H = H %>% layout(title=title)
     } else {
-      y <- subset(y0,it=input$dateRange)
+      y <- y0 # subset(y0,it=input$dateRange)
       dim(y) <- NULL
       if (is.precip(y)) {
         FUN <- 'sum'
@@ -589,15 +582,33 @@ server <- function(input, output, session) {
       if (input$timespace=='Annual_cycle_month') {
         mac <- data.frame(y=as.monthly(y,FUN=FUN)) 
         mac$Month <- month(as.monthly(y))
+        type='box'
+        AC <- plot_ly(mac,x=~Month,y=~y,name='mean_annual_cycle',type=type)  %>% 
+          layout(title=title,yaxis=list(ylab))
       } else {
-        mac <- data.frame(y) 
-        mac$Month <- month(y)  
+        y <- updatestation()
+        clim <- climatology(y)
+        Z <- diagram(y,plot=FALSE)
+        nyrs <- dim(Z)[2]
+        #colorpal<-colorRampPalette(brewer.pal(9,'Spectral'),nyrs)
+        colorpal <- rgb(seq(0,1,length=nyrs),sin(seq(0,pi,length=nyrs))^2,seq(1,0,length=nyrs),0.3)
+        colnames(Z) <- paste('y',colnames(Z),sep='')
+        yrs <- colnames(Z)
+        mac <- as.data.frame(cbind(coredata(clim),Z))
+        mac$day=1:365
+        AC <- plot_ly(mac,name='annual_cycle',type='scatter',mode='markers', showlegend = (input$showlegend=='Show')) 
+
+        for (i in 1:length(yrs)) {
+          cl <- paste("AC <- AC %>% add_lines(data=mac, y = ~",yrs[i],", x = ~day,",
+                      "type = 'scatter', mode = 'markers', line = list(width = 2,shape ='spline',color=colorpal[",
+                      i,"]), name ='",substr(yrs[i],2,5),"')",sep = '')
+          #print(cl)
+          eval(parse(text=cl))
+        }
+        print(names(mac))
+        AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='black')) %>%
+                     layout(title=title,yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
       }
-      
-      print(summary(mac)); print(input$dateRange); print(title)
-      print('The histogram/annual cycle is being rendered')
-      AC <- plot_ly(mac,x=~Month,y=~y,name='mean_annual_cycle',type='box')  %>% 
-        layout(title=title,yaxis=list(ylab))
     }
     
   })
@@ -644,6 +655,16 @@ server <- function(input, output, session) {
   output$mapdescription <- renderText({
     paste(descrlab[as.numeric(input$lingo)],explainmapstatistic(input$statistic,input$lingo,types))})
   output$datainterval <- renderText({
+    Y <- updatemetadata()
     paste(sources[is.element(src,input$src),as.numeric(input$lingo)],
           attr(Y,'period')[1],' - ',attr(Y,'period')[2])})
+  output$cntr <- renderText({
+    y <- updatetimeseries()
+    average <- round(mean(y,na.rm=TRUE),1); slope <- round(trend.coef(y),2)
+    varpro <- round(100*var(trend(y,na.rm=TRUE))/var(y,na.rm=TRUE))
+    trendpvalue <- round(100*trend.pval(y),2)
+    print(c(average,slope,varpro,trendpvalue))
+    paste(esd::loc(y),'in',esd::cntr(y),'mean=',average,'trend=', slope,esd::unit(y),'per decade. Trend explains', 
+          varpro,'% of the variance with a probability of',trendpvalue,'% that it is due to chance.')
+  })
 }

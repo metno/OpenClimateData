@@ -16,6 +16,7 @@ library(shiny)
 library(shinydashboard)
 library(leaflet)
 library(plotly)
+library(RColorBrewer)
 
 ## Functions used by the app: -------------------------------------------------------------------------------------
 
@@ -133,6 +134,7 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
   return(y)
 }
 
+
 ## The start-up settings - global variables etc used in the UI and server. Supports several languages
 print('--- <Initiatial settings> ---')
 ## Defaults
@@ -140,26 +142,66 @@ verbose <-FALSE                     ## For debugging
 lingo <- 1                         ## Default language option                
 #firstlocation <- 'Oslo - blind'   ## Default location
 #zoom <- 5                         ## Default zooming in the map
-reg1 <- 1                          ## Default source of dataset/region
+
+## Get a list of files with data - Get the file names of the data
+fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+dots <- gregexpr('.',fnames,fixed=TRUE)
+src <- fnames
+for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
+src <- rownames(table(src))
+print(src)
+reg1 <- (1:length(src))[is.element(src,'metnod')]                          ## Default source of dataset/region
+fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
+fnames <- fnames[grep(src[reg1],fnames)]
+
+## Extract variables
+#varids <- list.files(path='data',pattern='.nc',full.names = FALSE)
+varids <- substr(fnames,6,nchar(fnames))
+varids <- varids[grep(src[reg1],fnames)]
+varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
+#print(varids)
+
+## Setting for menues etc. 
+ci <- c(1:length(varids)); names(ci) <- vari2name(varids)
+
+## Extract information about summary statistics from the netCDF-files
+ipre <- ci[varids=='precip']
+stattype <- getstattype(fnames[ipre])
+print(stattype); print(varids)
 
 ## Data sources - representing different regions
-src <- c('metnod','ecad','ghcnd')
+#src <- c('metnod','ecad','Asia','Pacific')
+
 ## The labelling of the data sources in the menu
-regions <- rbind(c('Norge','Europa','Verden'),
-                 c('Noreg','Europa','Verden'),
-                 c('Norway','Europe','World'))
-names(src) <- regions[1,]
+regions <- rbind(c('Norge','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia'),
+                 c('Noreg','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia'),
+                 c('Norway','Eurasia','Asia','The Pacific','Africa','Latin-America','Australia'))
+source.regions <- c('metnod','ecad','Asia','Pacific','Africa','LatinAmerica','Australia')
+
+names(src) <- regions[1,match(src,source.regions)]
 descrlab <- c('Forklaring:','Forklaring:','Description:')
 
-sources <- rbind(c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
-                   'Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
-                   'Up-to-date data from Met Norway. Only includes station series longer than 30 years.'),
-                 c('Åpne data fra European Climate and Assessment Dataset (ECA&D). Kilde: https://www.ecad.eu/',
-                   'Åpne data fra European Climate and Assessment Dataset (ECA&D). Kilde: https://www.ecad.eu/',
-                   'Open climate data from Climate and Assessment Dataset (ECA&D). Source: https://www.ecad.eu/'),
-                 c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                   'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                   'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'))
+sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
+                    'Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
+                    'Up-to-date data from Met Norway. Only includes station series longer than 30 years.'),
+                  c('Åpne data fra European Climate and Assessment Dataset, Non-blended (ECA&D). Kilde: https://www.ecad.eu/',
+                    'Åpne data fra European Climate and Assessment Dataset, Non-blended (ECA&D). Kilde: https://www.ecad.eu/',
+                    'Open climate data from Climate and Assessment Dataset, Non-blended (ECA&D). Source: https://www.ecad.eu/'),
+                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
+                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
+                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
+                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
+                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
+                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description') )
 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
@@ -188,7 +230,7 @@ names(timespace) <- timespacenames[1,]
 
 ## Set the optional labels and titles in the menu based on chosen language 
 languages <- 1:3; language.names <- c('Bokmål','Nynorsk','English')
-maintitle <- c('Meteorologisk institutt klimadata','Meteorologisk institutt klimadata','MET Norway Climate records')
+maintitle <- c('Klimamålinger','Klimamælinger','Climate observations')
 maptitle <- c('Velg sted','Vel stad','Location selection')
 tstitle <- c('Tidsutvikling (historisk vær)','Tidsutvikling (historisk vêr)','Time series (past weather)')
 htitle <- c('Statistikk (historisk klima)','Statistikk (historisk klima)','Statistical distribution (past climate)')
@@ -233,26 +275,6 @@ highlighting <- c('None','New records','Top 10','Low 10')
 ##-----------------------------------------------------------------------------------------------------------
 
 names(languages) <- language.names
-
-## Get a list of files with data - Get the file names of the data
-fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
-fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
-fnames <- fnames[grep(src[reg1],fnames)]
-
-## Extract variables
-#varids <- list.files(path='data',pattern='.nc',full.names = FALSE)
-varids <- substr(fnames,6,nchar(fnames))
-varids <- varids[grep(src[reg1],fnames)]
-varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-#print(varids)
-
-## Setting for menues etc. 
-ci <- c(1:length(varids)); names(ci) <- vari2name(varids)
-
-## Extract information about summary statistics from the netCDF-files
-ipre <- ci[varids=='precip']
-stattype <- getstattype(fnames[ipre])
-print(stattype); print(varids)
 
 ## Get the names of locations, etc.
 print('Get metadata & summary statistics')

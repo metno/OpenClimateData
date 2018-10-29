@@ -10,7 +10,7 @@ names(r_colors) <- colors()
 
 ui <- dashboardPage(
   skin="green",
-  dashboardHeader(title = textOutput("OpenClimateDataPrototype")),
+  dashboardHeader(title = textOutput("maintitle")),
   dashboardSidebar(
     selectInput("ci", "Climate Index", choices= ci, selected=ci[varids=='precip']),
     selectInput("location", textOutput("locationlabel"), choices= Y$location,
@@ -84,7 +84,8 @@ ui <- dashboardPage(
                  selectInput("tscale", textOutput("timescalelabel"), choices= tscales, selected='year'),
                  selectInput("aspect", textOutput("aspectlabel"), choices= aspects,selected = aspects[1]),
                  selectInput("highlightTS", textOutput("highlightTSlabel"), choices= highlighting),
-                 selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS)
+                 selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS),
+                 box(textOutput("cntr"),background='light-blue',width=14)
                  # conditionalPanel(condition="tscale == 'day'",
                  #                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))
           ))
@@ -94,7 +95,10 @@ ui <- dashboardPage(
           collapsible = TRUE, width="100%", solidHeader = TRUE,
           column(9, plotlyOutput("histstation", height = 500,width = '100%')),
           column(3,
-                 selectInput("timespace", textOutput("timespacelabel"), choices= timespace,selected = timespace[1]) #,
+                 selectInput("timespace", textOutput("timespacelabel"), choices= timespace,selected = timespace[1]),
+                 conditionalPanel(condition="input.timespace == 'Annual_cycle_day'",
+                                  radioButtons("showlegend", "Legend", choices = c("Hide","Show"), selected = "Hide",
+                                               inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL)) #,
                  #dateRangeInput('dateRange',
                  #                label = textOutput("timeperiodlabel"),
                  #              start = as.Date('1951-01-01'),
@@ -120,6 +124,11 @@ ui <- dashboardPage(
                  "avalable from",tags$a(href="https:github.com/metno/esd","github.com/metno/esd"),
                  ". The source code for this app is available from ",
                  tags$a(href="https:github.com/metno/OpenClimateData","github.com/metno/OpenClimateData")),
+                 tags$br(),
+                 tags$h1("Data"),
+                 tags$p("The data from the Norwegian Meteorological Institute are available from ",
+                 tags$a(href="http://thredds.met.no/thredds/catalog/metusers/rasmusb/catalog.html",
+                        "http://thredds.met.no/thredds/catalog/metusers/rasmusb/catalog.html")),
                  tags$br(),
                  tags$h1("Help, tips and assistance"),
                  tags$p("We have used a wiki-page to",
