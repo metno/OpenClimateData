@@ -483,8 +483,6 @@ server <- function(input, output, session) {
     
     #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
     
-    
-    
     ## Marking the top and low 10 points
     #print('10 highs and lows')
     if (tolower(input$highlightTS)=='top 10') 
@@ -508,21 +506,20 @@ server <- function(input, output, session) {
                    Sys.sleep(0.05)}
                  })
     
-    
     print('The timeseries is being rendered')
-    if ( (is.precip(y)) & (input$aspect=="Number_of_days") ) {
-      timeseries <- data.frame(date=index(y),pr=coredata(y[,1]),obs= coredata(y[,2]),
-                               trend=coredata(trend(y[,2])))
-      TS <- plot_ly(timeseries,x=~date,y=~obs,type = 'scatter',mode='lines',name='observed')
-      TS <- TS %>% add_trace(y=~trend,name='trend') %>% 
-        add_lines(timeseries,x=~date,y=~pr,type = 'scatter',mode='lines',name='predicted',color='red') %>%
-        add_markers(x=index(highlight10),y=coredata(highlight10),label=input$highlightTS) %>% 
-        layout(title=loc(y),yaxis = list(title=esd::unit(y)))
+    if ( (!is.null(dim(y))) & (input$aspect=="Number_of_days") ) {
+      print(summary(y))
+      timeseries <- data.frame(date=index(y),pr=365.25*coredata(y[,1]),obs= 365.25*coredata(y[,2]),
+                               trend=coredata(trend(365.25*y[,2])))
+      TS <- plot_ly(timeseries,x=~date,y=~obs,type = 'scatter',mode='lines',name='observed',color=rgb(0,0,0))
+      TS <- TS %>% add_trace(y=~trend,name='trend',color=rgb(1,0,0)) %>% 
+                   add_trace(y=~pr,name="predicted",color=rgb(0,0,1,0.5)) %>%
+        layout(title=loc(y),yaxis = list(title='days/year'))
     } else {
       timeseries <- data.frame(date=index(y),y=coredata(y),trend=coredata(trend(y)))
       TS <- plot_ly(timeseries,x=~date,y=~y,type = 'scatter',mode='lines',name='data')
       TS = TS %>% add_trace(y=~trend,name='trend') %>% 
-        add_markers(x=index(highlight10),y=coredata(highlight10),label=input$highlightTS) %>% 
+        add_markers(x=index(highlight10),y=coredata(highlight10),hoveron=input$highlightTS) %>% 
         layout(title=loc(y),yaxis = list(title=esd::unit(y)))
     }
     #TS$elementID <- NULL
@@ -656,13 +653,14 @@ server <- function(input, output, session) {
     paste(descrlab[as.numeric(input$lingo)],explainmapstatistic(input$statistic,input$lingo,types))})
   output$datainterval <- renderText({
     Y <- updatemetadata()
-    paste(sources[is.element(src,input$src),as.numeric(input$lingo)],
+    #print(paste('Source',input$src))
+    paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
           attr(Y,'period')[1],' - ',attr(Y,'period')[2])})
   output$cntr <- renderText({
     y <- updatetimeseries()
-    average <- round(mean(y,na.rm=TRUE),1); slope <- round(trend.coef(y),2)
-    varpro <- round(100*var(trend(y,na.rm=TRUE))/var(y,na.rm=TRUE))
-    trendpvalue <- round(100*trend.pval(y),2)
+    average <- round(mean(y[,1],na.rm=TRUE),1); slope <- round(trend.coef(y[,1]),2)
+    varpro <- round(100*var(trend(y[,1],na.rm=TRUE))/var(y[,1],na.rm=TRUE))
+    trendpvalue <- round(100*trend.pval(y[,1]),2)
     print(c(average,slope,varpro,trendpvalue))
     paste(esd::loc(y),'in',esd::cntr(y),'mean=',average,'trend=', slope,esd::unit(y),'per decade. Trend explains', 
           varpro,'% of the variance with a probability of',trendpvalue,'% that it is due to chance.')
