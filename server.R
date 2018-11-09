@@ -316,7 +316,8 @@ server <- function(input, output, session) {
   ## The following are more general ractive expressions
   zoom <- reactive({
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=3)
+                        'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=3,
+                        'INAM'=4,'CLARIS'=4)
     return(zoomscale)
   })
   

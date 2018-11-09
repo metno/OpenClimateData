@@ -173,10 +173,10 @@ print(stattype); print(varids)
 #src <- c('metnod','ecad','Asia','Pacific')
 
 ## The labelling of the data sources in the menu
-regions <- rbind(c('Norge','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America'),
-                 c('Noreg','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America'),
-                 c('Norway','Eurasia','Asia','The Pacific','Africa','Latin-America','Australia','North America'))
-source.regions <- c('metnod','ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA')
+regions <- rbind(c('Norge','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
+                 c('Noreg','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
+                 c('Norway','Eurasia','Asia','The Pacific','Africa','Latin-America','Australia','North America','Mozambique','Argentinia'))
+source.regions <- c('metnod','ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA','INAM','CLARIS')
 
 names(src) <- regions[1,match(src,source.regions)]
 descrlab <- c('Forklaring:','Forklaring:','Description:')
@@ -204,7 +204,8 @@ sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner 
                     'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
                   c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
                     'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description') )
+                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
+                  c('INAM','INAM','INAM'),c('CLARIS','CLARIS','CLARIS'))
 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
