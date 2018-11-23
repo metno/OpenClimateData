@@ -140,11 +140,21 @@ server <- function(input, output, session) {
   observe({
     print('observe - update slider')
     statistic <- vals()
-    if (max(statistic,na.rm=TRUE)>10) digits <- 0 else digits <- 1
-    statisticmin <- round(min(statistic,na.rm=TRUE),digits)
-    statisticmax <- round(max(statistic,na.rm=TRUE),digits)
-    start1 <- quantile(statistic,probs = 0.005,na.rm=TRUE, names=FALSE)
-    start2 <- quantile(statistic,probs = 0.995,na.rm=TRUE, names=FALSE)
+    if (max(abs(statistic),na.rm=TRUE)>10) digits <- 0 else 
+      if (max(abs(statistic),na.rm=TRUE)>1) digits <- 1 else
+        digits <- 2
+    if (tolower(substr(input$statistic,1,5)) != 'trend') {
+      statisticmin <- round(min(statistic,na.rm=TRUE),digits)
+      statisticmax <- round(max(statistic,na.rm=TRUE),digits)
+      start1 <- round(quantile(statistic,probs = 0.005,na.rm=TRUE, names=FALSE),digits)
+      start2 <- round(quantile(statistic,probs = 0.995,na.rm=TRUE, names=FALSE),digits)
+    } else {
+      statisticmin <- -round(max(abs(statistic),na.rm=TRUE),digits)
+      statisticmax <-  round(max(abs(statistic),na.rm=TRUE),digits)
+      start2 <- round(quantile(abs(statistic),0.975,na.rm=TRUE),digits)
+      start1 <- -start2
+    }
+    
     #print(statistic)
     print(paste('Slider max & min= [',statisticmin,', ',statisticmax,'] n=',length(statistic),
                 ' default:',start1,start2,' input$ci=',input$ci,sep=''))
@@ -316,8 +326,8 @@ server <- function(input, output, session) {
   ## The following are more general ractive expressions
   zoom <- reactive({
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=3,
-                        'INAM'=4,'CLARIS'=4)
+                        'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=4,
+                        'INAM'=4,'CLARIS'=5)
     return(zoomscale)
   })
   
@@ -383,6 +393,7 @@ server <- function(input, output, session) {
   output$map <- renderLeaflet({
     print('output$map - render')
     Y <- updatemetadata()
+    vids <- updatevarids()
     statistic <- vals()
     
     #print('Stastistic shown on map');print(summary(statistic))
@@ -416,19 +427,21 @@ server <- function(input, output, session) {
       print(paste(input$ci,esd::varid(y),min(statistic),max(statistic),input$statisticrange[1],input$statisticrange[2]))
       filter <- rep(TRUE,length(statistic))  
     }
-    if (!is.null(Y$wetfreq)) reverse <- TRUE else reverse <- FALSE
+    if (sum(is.element(vids[as.numeric(input$ci)],c('precip','sd')))>0) reverse <- TRUE else reverse <- FALSE
     #print(paste('Reverse palette =',reverse)); print(summary(statistic))
     #print(c(sum(filter),length(filter),length(statistic)))
-    pal <- colorBin(colscal(col = 't2m',n=100),
-                    statistic[filter],bins = 10,pretty = TRUE,reverse=reverse)    
+    pal <- colorBin(colscal(col = 't2m',n=10),
+                    seq(input$statisticrange[1],input$statisticrange[2],length=10),bins = 10,pretty = TRUE,reverse=reverse)    
     legendtitle <- input$statistic
     if (legendtitle=='Specific_day') legendtitle=input$it
-    is <- which(tolower(Y$location) == tolower(input$location))
-    if (length(is)==0) is <- 1
+    is <- which(tolower(Y$location) == tolower(input$location))[1]
+    good <- is.finite(Y$longitude) & is.finite(Y$latitude)
+    Y <- Y[good,]; statistic <- statistic[good]; filter <- filter[good]
+    if ( (length(is)==0) | is.na(is) ) is <- 1
     
     print(paste('The map is being rendered:','Number of locations shown=',sum(filter),'with',sum(!is.finite(statistic)),
                 'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
-                input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci))
+                input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
     print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
     
     leaflet("mapid") %>% 
@@ -481,7 +494,7 @@ server <- function(input, output, session) {
     print(paste('Time series for',input$location,'ci=',input$ci,'season=',input$season,
                          'tscale=',input$tscale,'aspect=',input$aspect))
     y <- updatetimeseries()
-    
+    print(summary(coredata(y)))
     #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
     
     ## Marking the top and low 10 points
@@ -509,15 +522,16 @@ server <- function(input, output, session) {
     
     print('The timeseries is being rendered')
     if ( (!is.null(dim(y))) & (input$aspect=="Number_of_days") ) {
-      print(summary(y))
       timeseries <- data.frame(date=index(y),pr=365.25*coredata(y[,1]),obs= 365.25*coredata(y[,2]),
                                trend=coredata(trend(365.25*y[,2])))
+      print(summary(timeseries))
       TS <- plot_ly(timeseries,x=~date,y=~obs,type = 'scatter',mode='lines',name='observed',color=rgb(0,0,0))
       TS <- TS %>% add_trace(y=~trend,name='trend',color=rgb(1,0,0)) %>% 
                    add_trace(y=~pr,name="predicted",color=rgb(0,0,1,0.5)) %>%
         layout(title=loc(y),yaxis = list(title='days/year'))
     } else {
       timeseries <- data.frame(date=index(y),y=coredata(y),trend=coredata(trend(y)))
+      print(summary(timeseries))
       TS <- plot_ly(timeseries,x=~date,y=~y,type = 'scatter',mode='lines',name='data')
       TS = TS %>% add_trace(y=~trend,name='trend') %>% 
         add_markers(x=index(highlight10),y=coredata(highlight10),hoveron=input$highlightTS) %>% 
