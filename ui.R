@@ -1,30 +1,28 @@
-## See comments and explanations in global.R
-## Rasmus Benestad
-# Load libraries
-
-##<div id="OpenClimateDataPrototype" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
-  
-r_colors <- rgb(t(col2rgb(colors()) / 255))
-names(r_colors) <- colors()
+### title: OpenClimateDataPortal
+### See comments and explanations in global.R
+### Rasmus Benestad
 ###----------------------------------
+
+titlePanel("title panel")
 
 ui <- dashboardPage(
   skin="green",
   dashboardHeader(title = textOutput("maintitle")),
   dashboardSidebar(
-    selectInput("ci", "Climate Index", choices= ci, selected=ci[varids=='precip']),
-    selectInput("location", textOutput("locationlabel"), choices= Y$location,
-               selected = 'Oslo - blind'), 
-    selectInput("lingo", "Language", 
-                choices= languages,selected='English'),
     selectInput("src", "Region", 
                 choices= src,selected='metnod'),
     box(textOutput("datainterval"),background='black',width=12),
+    selectInput("ci", "Climate Index", choices= ci, selected=ci[varids=='precip']),
+    selectInput("location", textOutput("locationlabel"), choices= Y$location,
+               selected = 'Oslo - blind'),
+
     #tags$style(type="text/css", "#string { margine-left: 30px; margin-right: 30px; font-size: 30px;}"),
     selectInput("country", "Show", 
                 choices= cntrs,selected='All'),
     conditionalPanel(condition="input.statistic == 'Number_of_days' || input.aspect == 'Number_of_days'",
-                     numericInput("x0",textOutput("threshold"), 20)),
+                     numericInput("x0",textOutput("threshold"), 20)), 
+    selectInput("lingo", "Language", 
+                choices= languages,selected=3),
     collapsed=FALSE
     ),
   dashboardBody(
@@ -97,8 +95,10 @@ ui <- dashboardPage(
           column(3,
                  selectInput("timespace", textOutput("timespacelabel"), choices= timespace,selected = timespace[1]),
                  conditionalPanel(condition="input.timespace == 'Annual_cycle_day'",
-                                  radioButtons("showlegend", "Legend", choices = c("Hide","Show"), selected = "Hide",
-                                               inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL)) #,
+                                  radioButtons("showlegend", textOutput("yearlabel"), choices = c('Show','Hide'),
+                                               selected = "Hide",
+                                               inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL)),
+                 box(textOutput("hdes"),background='light-blue',width=14)
                  #dateRangeInput('dateRange',
                  #                label = textOutput("timeperiodlabel"),
                  #              start = as.Date('1951-01-01'),

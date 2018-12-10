@@ -24,20 +24,20 @@ library(RColorBrewer)
 type2name <-function(stattype,lingo,types) {
   names <- rbind(
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder (%)",
-      "Trend (per tiår)","Trend: dager med nedbør (%)","Trend: nedbørsintensitet", 
-      "Dager med nedbør (%)","Typisk nedbørsintensitet (mm/dag)",
-      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder (%)"),
+      "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
+      "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
+      "Dager med nedbør","Typisk nedbørsintensitet",
+      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder"),
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","Antall år med data","Rekorder: registrert/(antall uten klimaendring)",
-      "Trend","Trend: dager med nedbør (%)","Trend: nedbørsintensitet", 
-      "Dager med nedbør (%)","Typisk nedbørsintensitet (mm/dag)",
-      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Lave rekorder: registrert/(antall uten klimaendring)"),
+      "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
+      "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
+      "Dager med nedbør","Typisk nedbørsintensitet",
+      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder"),
     c("Altitude","Start year","Days without precipitation","End year","Latitude","Longitude","Maximum",           
-      "Average","Minimum","Years with data"," Number of record-highs (%)",
-      "Trend (per decade)","Trend in wet days","Trend in rain intensity", 
-      "Number of wet days (%)","Mean rain intensity (mm/day)","Number of days above threshold",
-      "Specific date","Standard deviation","Number of record-lows (%)")
+      "Average","Minimum","Years with data"," Number of record-highs",
+      "Trend","Trend in wet days","Trend in rain intensity", 
+      "Number of wet days","Mean rain intensity","Number of days above threshold",
+      "Specific date","Standard deviation","Number of record-lows")
   )
   matchingname <- names[as.numeric(lingo),]
   descr <- matchingname[match(tolower(stattype),tolower(types))]
@@ -50,10 +50,11 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Hvor mange dager det har gått uten nedbør",
       "Siste år med målinger (metadata)","Målestasjonens breddegrad (metadata)",
       "Målestasjoens lengdegrad (metadata)","Maksimumsverdi",           
-      "Gjennomsnittlig nedbørsmengde (mm) eller temperatur for et helt år eller sesong",
+      "Gjennomsnittlig over flere år eller sesonger.",
       "Minste målte verdi","Hvor lang er måleserien (i antall år)",
       "Forholdet (i %) mellom antall registrerte rekorder og hva man forventer i et stabilt klima",
-      "Trend (per tiår)","Trend i dager med nedbør (%/tiår)","Trend i nedbørsintensitet (mm/dag per tiår)", 
+      "Trendene viser gjennomsnittlig endring over tid. Her vises estimert endring per tiår. Brudd i datamålingene kan gi feilaktige tall.",
+      "Trend i dager med nedbør (%/tiår)","Trend i nedbørsintensitet (mm/dag per tiår)", 
       "Dager med nedbør (%)","Gjennomsnittlig nedbørsmengde for dager det regner mer enn 1mm (mm/dag)",
       "Forventet antall dager over terskelverdi","Målte verdier for en valgt dag",
       "Standardavvik av avvik fra normalen over et år eller en sesong",
@@ -62,10 +63,11 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Kor mange dagar det har gått utan nedbør",
       "Siste år med mælinger (metadata)","Mælestasjonens breddegrad (metadata)",
       "Mælestasjoens lengdegrad (metadata)","Maksimumsverdi",           
-      "Gjennomsnittleg nedbørsmengde (mm) eller temperatur for et heilt år eller sesong",
-      "Minste mælte verdi","Kor myke målledata som finnes (i antall år)",
+      "Gjennomsnittleg over fleire år eller sesongar.",
+      "Minste mælte verdi","Kor mykje mæledata som fins (i antall år)",
       "Forholdet (i %) mellom antall registrerte rekordar og kva ein forventar i eit stabilt klima",
-      "Trend (per tiår)","Trend i dagar med nedbør (%/tiår)","Trend i nedbørsintensitet (mm/dag per tiår)", 
+      "Trendane viser gjennomsnittleg endring over tid. Her vises estimert endring per tiår. Brot i datamælingene kan gi feilaktige tall.",
+      "Trend i dagar med nedbør (%/tiår)","Trend i nedbørsintensitet (mm/dag per tiår)", 
       "Dagar med nedbør (%)","Gjennomsnittleg nedbørsmengde for dager det regner meir enn 1mm (mm/dag)",
       "Forventa antall dagar over terskelverdi","Mælte verdier for ein vald dag",
       "Standardavvik av avvik fra normalen over eit år eller ein sesong",
@@ -74,10 +76,11 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "The year when the observations started (metadata)","Number of days since it last rained",
       "The last year with observations (metadata)","The latitude of the station in degrees north (metadata)",
       "The longitude of the station in degrees east (metadata)","The highest recorded value",           
-      "The average year or season in terms of total precipitation or mean temperature",
+      "The average over the years or seasons",
       "The smallest value","How many years there is with data (metadata)",
       "The number of record-highs compared to expected number given a stable climate (%)",
-      "Trend (per decade)","Trend in number of wet days",
+      "The trend shows the average change over time. Here it is the estimated change per decade. Discontinuities in the data can give misleading estimates",
+      "Trend in number of wet days",
       "Trend in the annual or seasonal wet-day mean precipitation", 
       "The mean number of wet days over the whole year or seasons (%)",
       "The mean wet-day mean precipitation over the whole year or seasons (mm/day)",
@@ -169,6 +172,9 @@ ipre <- ci[varids=='precip']
 stattype <- getstattype(fnames[ipre])
 print(stattype); print(varids)
 
+r_colors <- rgb(t(col2rgb(colors()) / 255))
+names(r_colors) <- colors()
+
 ## Data sources - representing different regions
 #src <- c('metnod','ecad','Asia','Pacific')
 
@@ -180,6 +186,11 @@ source.regions <- c('metnod','ecad','Asia','Pacific','Africa','LatinAmerica','Au
 
 names(src) <- regions[1,match(src,source.regions)]
 descrlab <- c('Forklaring:','Forklaring:','Description:')
+decade <- c('tiår','tiår','decade')
+degree <- c('grader','grader','degrees')
+yr <- c('år','år','year')
+yrs <- c('år','år','years')
+days <- c('dager','dagar','days')
 
 sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
                     'Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
@@ -224,17 +235,24 @@ seaTS <- c('All year'='all','Dec-Feb'='DJF',
 
 timespace <- c('Annual_cycle_month','Annual_cycle_day',
                'Histogram_location','Histogram_map')
-timespacenames <- rbind(c('Sesongvariasjon på månedsbasis','Sesongvariasjon på dagsbasis',
-                          'Histogram for gitt sted','Statistikk for steder vist på kartet'),
-                        c('Sesongvariasjon på månedsbasis','Sesongvariasjon på dagsbasis',
-                          'Histogram for gitt sted','Statistikk for steder vist på kartet'),
-                        c('Annual cycle (monthly)','Annual cycle (daily)',
-                          'Histogram for selected location','Statstics for data shown in map'))
+timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk',
+                          'Stedsstatistikk','Alle stedene'),
+                        c('Månedstatistikk','Døgnstatistikk',
+                          'Stedsstatistikk','Alle stadane'),
+                        c('Monthly statistics','Daily statistics',
+                          'Histogram','Spatial statstics'))
+timespacedescr <- rbind(c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
+                          'Histogram for','Statistikk for steder vist på kartet'),
+                        c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
+                          'Histogram for','Statistikk for steder vist på kartet'),
+                        c('Annual cycle (monthly) for','Annual cycle (daily) for',
+                          'Histogram for','Histogram for the locations shown in map'))
+
 names(timespace) <- timespacenames[1,]
 
 ## Set the optional labels and titles in the menu based on chosen language 
 languages <- 1:3; language.names <- c('Bokmål','Nynorsk','English')
-maintitle <- c('Klimamålinger','Klimamælinger','Climate observations')
+maintitle <- c('Klimamålinger','Klimamælinger','Climatology')
 maptitle <- c('Velg sted','Vel stad','Location selection')
 tstitle <- c('Tidsutvikling (historisk vær)','Tidsutvikling (historisk vêr)','Time series (past weather)')
 htitle <- c('Statistikk (historisk klima)','Statistikk (historisk klima)','Statistical distribution (past climate)')
@@ -272,6 +290,8 @@ timescales <- rbind(c('Dag','Måned','Sesong','År'),
                     c('Dag','Måned','Sesong','År'),
                     c('Day','Month','Season','Year'))
 lab.speficicday <- c('Utvalgt dag','Utvald dag','Specific day')
+showhideyears <- c('Enkelte år','Enkelte år','Individual years')
+showyears <- rbind(c('Vis','Skjul'), c('Vis','Skjul'), c('Show','Hide'))
 aspects <- aspectsP
 tscales <- c("day","month","season","year"); names(tscales) <- tscales
 highlighting <- c('None','New records','Top 10','Low 10')
@@ -284,7 +304,7 @@ names(languages) <- language.names
 print('Get metadata & summary statistics')
 Y <- retrieve.stationsummary(fnames[ipre])
 print('Get first station')
-y <- retrieve.station(fnames[ipre],stid=Y$station.id[Y$location=="Oslo - blind"],verbose=verbose)
+y <- retrieve.station(fnames[ipre],stid=18700,verbose=verbose)
 #y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="De bilt"],verbose=verbose)
 
 print('Get range for the sliding bar')

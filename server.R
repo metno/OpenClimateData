@@ -42,8 +42,8 @@ server <- function(input, output, session) {
                      sprintf("Interval: %s", paste(Y$first.year[Y$station.id == stid],Y$last.year[Y$station.id == stid],sep = '-'))
     )
     
-    leafletProxy("mapid") %>% addPopups(lng, lat, content,layerId = stid)
-    #print('((()))')
+    mapid <- mapid %>% addPopups(lng, lat, content,layerId = stid)
+    return(mapid)
   }
   
   ## Events ---------------------------------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ server <- function(input, output, session) {
   observe({
     print('observe - Update location')
     Y <- updatemetadata()
-    loc1 <- switch(input$src,'metnod'='Oslo - blind','ecad'='De bilt','ghcnd'=Y$location[1])
+    loc1 <- switch(input$src,'metnod'='Oslo - blindern','ecad'='De bilt','ghcnd'=Y$location[1])
     print(paste('New default location:',loc1))
     sel <- is.element(locations(),loc1)
     if (sum(sel)==0) print(locations()) else
@@ -149,17 +149,19 @@ server <- function(input, output, session) {
       start1 <- round(quantile(statistic,probs = 0.005,na.rm=TRUE, names=FALSE),digits)
       start2 <- round(quantile(statistic,probs = 0.995,na.rm=TRUE, names=FALSE),digits)
     } else {
-      statisticmin <- -round(max(abs(statistic),na.rm=TRUE),digits)
       statisticmax <-  round(max(abs(statistic),na.rm=TRUE),digits)
+      statisticmin <- -statisticmax
       start2 <- round(quantile(abs(statistic),0.975,na.rm=TRUE),digits)
       start1 <- -start2
     }
     
+    step <- max(c(min(c(1,round((start2 - start1)/100,1))),0.1))
+      
     #print(statistic)
     print(paste('Slider max & min= [',statisticmin,', ',statisticmax,'] n=',length(statistic),
                 ' default:',start1,start2,' input$ci=',input$ci,sep=''))
-    updateSliderInput(session=session,inputId="statisticrange",
-                      min=statisticmin,max=statisticmax,value = c(start1,start2))
+    updateSliderInput(session=session,inputId="statisticrange",value = c(start1,start2),
+                      min=statisticmin,max=statisticmax,step=step)
   })
   
   observe({
@@ -386,8 +388,49 @@ server <- function(input, output, session) {
     return(Z) 
   })
   
- 
+  legendtitle <- reactive({
+    Y <- updatemetadata()
+    #print('legendtitle'); print(stattype); print(input$statistic); print(input$lingo)
+    #title <- type2name(input$statistic,input$lingo,stattype)
+    #if ( (length(grep(attr(Y,'unit')$value,title))==0) & (length(grep('%',title))==0) )
+    #  title <- paste(title,' (',attr(Y,'unit')$value,')',sep='')
+    title <- attr(Y,'unit')
+    if (length(grep(tolower('trend'),tolower(input$statistic)))>0) title <- paste(title,decade[as.numeric(input$lingo)],sep='/')
+    if ( (length(grep(tolower('records'),tolower(input$statistic)))>0) | 
+         (length(grep(tolower('wetfreq'),tolower(input$statistic)))>0) ) title <- '%'
+    if (length(grep(tolower('altitude'),tolower(input$statistic)))>0) title <- 'm'
+    if ( (length(grep(tolower('longitude'),tolower(input$statistic)))>0) | 
+         (length(grep(tolower('latitude'),tolower(input$statistic)))>0) ) title <- degree[as.numeric(input$lingo)]
+    if ( (length(grep(tolower('first.year'),tolower(input$statistic)))>0) | 
+         (length(grep(tolower('last.year'),tolower(input$statistic)))>0) ) title <- yr[as.numeric(input$lingo)]
+    if (length(grep(tolower('valid'),tolower(input$statistic)))>0) title <- yrs[as.numeric(input$lingo)]
+    if (length(grep(tolower('lastrains'),tolower(input$statistic)))>0) title <- days[as.numeric(input$lingo)]
+    if (input$statistic=='Specific_day') title=paste(input$it,' (',attr(Y,'unit'),')',sep='')
+    return(title)
+  })
+  
   ## Output rendering ------------------------------------------------------------------------------------------------
+  
+  observe({
+    print('observe - marker click')
+
+    mapid2 <- leafletProxy("mapid") %>% clearPopups()
+    event <- input$map_marker_click
+    #print('Data Explorer from map'); print(event$id)
+    if (is.null(event))
+      return()
+
+    #print('Click --->'); print(event); print('<--- Click')
+    isolate({
+    mapid <- showMetaPopup(mapid2,stid=event$id,lat=event$lat, lng = event$lng,ci = as.numeric(input$ci))
+    })
+
+    #removeMarker("map",layerId = event$id)
+    leafletProxy("mapid",data = event) %>%
+      addCircles(lng = event$lng, lat = event$lat,color = 'red',layerId = 'selectID', weight = 12)
+
+    #selectedStid <- event$id
+  })
   
   ## The map panel 
   output$map <- renderLeaflet({
@@ -432,8 +475,7 @@ server <- function(input, output, session) {
     #print(c(sum(filter),length(filter),length(statistic)))
     pal <- colorBin(colscal(col = 't2m',n=10),
                     seq(input$statisticrange[1],input$statisticrange[2],length=10),bins = 10,pretty = TRUE,reverse=reverse)    
-    legendtitle <- input$statistic
-    if (legendtitle=='Specific_day') legendtitle=input$it
+   
     is <- which(tolower(Y$location) == tolower(input$location))[1]
     good <- is.finite(Y$longitude) & is.finite(Y$latitude)
     Y <- Y[good,]; statistic <- statistic[good]; filter <- filter[good]
@@ -459,8 +501,8 @@ server <- function(input, output, session) {
                        radius=5,stroke=TRUE, weight=5, color='black',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
-      addLegend("bottomleft", pal=pal, values=round(statistic[filter], digits = 2), 
-                title=legendtitle,
+      addLegend("topright", pal=pal, values=round(statistic[filter], digits = 2), 
+                title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
       addProviderTiles(providers$Esri.WorldStreetMap,
                        #addProviderTiles(providers$Stamen.TonerLite,
@@ -468,26 +510,6 @@ server <- function(input, output, session) {
       ) %>% 
       setView(lat=Y$latitude[is],lng = Y$longitude[is], zoom = zoom())
   })
-  
-  observe({
-    print('observe - marker click')
-    leafletProxy("mapid") %>% clearPopups()
-    event <- input$map_marker_click
-    #print('Data Explorer from map'); print(event$id)
-    if (is.null(event))
-      return()
-    #print('Click --->'); print(event); print('<--- Click')
-    isolate({
-      showMetaPopup("mapid",stid=event$id,lat=event$lat, lng = event$lng,ci = as.numeric(input$ci))
-    })
-
-    #removeMarker("map",layerId = event$id)
-    leafletProxy("mapid",data = event) %>%
-      addCircles(lng = event$lng, lat = event$lat,color = 'red',layerId = 'selectID', weight = 12)
-
-    #selectedStid <- event$id
-  })
-  
   
   output$plotstation <- renderPlotly({
     print('output$plotstation - render')
@@ -575,10 +597,10 @@ server <- function(input, output, session) {
         title <- paste(input$statistic,': ',paste(names(syH),round(syH,1),collapse=', ',sep='='),sep='') else
           title <- paste(loc(y),': ',paste(syH,collapse=', ',sep='='),sep='')
       #print(title)
-      H <- plot_ly(dist,x=~y,name='data',type='histogram',histnorm='probability')
+      H <- plot_ly(data=dist,x=~y,name='data',type='histogram',histnorm='probability')
       H = H %>% #add_trace(y=fit$x,x=pdf,name='pdf',mode='lines') %>% 
         #add_trace(x = fit$x, y = fit$y, mode = "lines", fill = "tozeroy", yaxis = "y2", name = "Density") %>%
-        layout(title=title)
+        layout(xaxis=list(title=esd::unit(y)),yaxis=list(title='probability density'))
       #H = H %>% layout(title=title)
     } else {
       y <- y0 # subset(y0,it=input$dateRange)
@@ -596,7 +618,7 @@ server <- function(input, output, session) {
         mac$Month <- month(as.monthly(y))
         type='box'
         AC <- plot_ly(mac,x=~Month,y=~y,name='mean_annual_cycle',type=type)  %>% 
-          layout(title=title,yaxis=list(ylab))
+          layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Calendar month'))
       } else {
         y <- updatestation()
         clim <- climatology(y)
@@ -619,7 +641,7 @@ server <- function(input, output, session) {
         }
         print(names(mac))
         AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='black')) %>%
-                     layout(title=title,yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
+                     layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
       }
     }
     
@@ -673,11 +695,40 @@ server <- function(input, output, session) {
           attr(Y,'period')[1],' - ',attr(Y,'period')[2])})
   output$cntr <- renderText({
     y <- updatetimeseries()
-    average <- round(mean(y[,1],na.rm=TRUE),1); slope <- round(trend.coef(y[,1]),2)
-    varpro <- round(100*var(trend(y[,1],na.rm=TRUE))/var(y[,1],na.rm=TRUE))
-    trendpvalue <- round(100*trend.pval(y[,1]),2)
+    average <- round(mean(y[,1],na.rm=TRUE),1)[1]; slope <- round(trend.coef(y[,1]),2)[1]
+    varpro <- round(100*var(trend(y[,1],na.rm=TRUE))/var(y[,1],na.rm=TRUE))[1]
+    trendpvalue <- round(100*trend.pval(y[,1]),2)[1]
     print(c(average,slope,varpro,trendpvalue))
-    paste(esd::loc(y),'in',esd::cntr(y),'mean=',average,'trend=', slope,esd::unit(y),'per decade. Trend explains', 
+    paste(esd::loc(y)[1],'in',esd::cntr(y)[1],'mean=',average,'. Trend=', slope,esd::unit(y)[1],'per decade and explains', 
           varpro,'% of the variance with a probability of',trendpvalue,'% that it is due to chance.')
   })
+  output$hdes <- renderText({
+    y <- updatetimeseries()
+    Y <- updatemetadata()
+    statistic <- vals()
+    
+    if (input$timespace == 'Histogram_location') {
+      yH <- coredata(y) 
+    } else yH <- statistic
+    syH <- summary(yH)[c(1,4,6)]
+    if (substr(input$timespace,1,12) != 'Annual_cycle') {
+      if (input$timespace=='Histogram_map') 
+        hsum <- paste('Data= ',input$statistic,' ', attr(Y,'longname'),': ',paste(names(syH),round(syH,1),collapse=', ',sep='='),sep='') else
+        hsum <- paste(syH,collapse=', ',sep='=')
+    } else {
+      hsum <- paste(attr(y,'longname'),'period=',paste(range(index(y)),collapse='-'))
+    }
+    hdescr <- timespacedescr[as.numeric(input$lingo),match(input$timespace,timespace)]
+    if (input$timespace != 'Histogram_map') hdescr <- paste(hdescr,esd::loc(y),'in',esd::cntr(y)[1])
+    if (input$timespace == 'Histogram_location') {
+      if (is.precip(y)) hdescr <- paste(hdescr,'. Time scale= ',input$tscale,', aspect= ',
+                                        aspectnameP[as.numeric(input$lingo),is.element(aspectsP,input$aspect)],sep='') else
+                        hdescr <- paste(hdescr,'. Time scale= ',input$tscale,', aspect= ',
+                                        aspectnameT[as.numeric(input$lingo),is.element(aspectsT,input$aspect)],sep='')
+    }
+    print(c(hdescr,hsum))
+    paste(hdescr,'. ',hsum,'. Sample size= ',sum(is.finite(yH)),' data points.',sep='')
+  })
+  output$yearlabel <- renderText({
+    showhideyears[as.numeric(input$lingo)]})
 }
