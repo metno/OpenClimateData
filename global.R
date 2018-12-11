@@ -192,6 +192,7 @@ yr <- c('år','år','year')
 yrs <- c('år','år','years')
 days <- c('dager','dagar','days')
 
+
 sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
                     'Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
                     'Up-to-date data from Met Norway. Only includes station series longer than 30 years.'),
@@ -258,14 +259,15 @@ tstitle <- c('Tidsutvikling (historisk vær)','Tidsutvikling (historisk vêr)','
 htitle <- c('Statistikk (historisk klima)','Statistikk (historisk klima)','Statistical distribution (past climate)')
 cftitle <- c('Om portalen & Tilbakemeldinger','Om portalen & Tilbakemeldingar','About & feedback')
 lab.timescale <- c("Tidsskala","Tidsskala","Time scale")
-lab.timespace <- c("Tid/rom","Tid/rom","Time or Space")
+lab.season <- c("Årstid","Årstid","Season")
+lab.timespace <- c("Tidsmessig/romlig statistikk","Tidsmessig/romlig statistikk","Temporal/spatial statistics")
 lab.season <- c("Årstid","Årstid","Season")
 lab.highlight <- c("Uthev","Uthev","Higlight")
 lab.aspect <- c("Perspektiv","Perspektiv","Aspect")
 lab.timeperiod <- c("Tidsperiode","Tidsperiode","Time period")
 lab.threshold <- c("Terskelverdi","Treskelverdi","Threshold")
 lab.location <- c("Sted","Stad","Location")
-lab.statitics <- c("Nøkkeltall","Nøkkeltal","Key quantity")
+lab.statitics <- c("Nøkkeltall","Nøkkeltal","Show quantity")
 lab.date <- c("Utvalgt dato","Utvald dato","A specific day")
 lab.highlight <- c('Uthev','Uthev','Highlight')
 lab.exclude <- c('Ekcluder','Eksluder','Exclude')

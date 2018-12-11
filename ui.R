@@ -67,7 +67,7 @@ ui <- dashboardPage(
                    column(1),
                    column(3, selectInput("statistic", textOutput("statisticslabel"), 
                                          choices= stattype,selected='mean')),
-                   column(2, selectInput("season", textOutput("seasonlabel"), choices= sea)),
+                   column(3, selectInput("season", textOutput("seasonlabel"), choices= sea)),
                    column(2, selectInput("highlight", textOutput("highlightlabel"), choices= highlighting)),
                    
                    column(3, conditionalPanel(condition="input.statistic == 'Specific_day'",
@@ -81,35 +81,31 @@ ui <- dashboardPage(
         tabPanel('Past Weather',fluidPage(
           #box(title=textOutput("tstitle"),status = "success",collapsed = TRUE,
           #    collapsible = TRUE, width="100%", solidHeader = TRUE,
-          column(9, plotlyOutput("plotstation", height = 500,width = '100%')),
-          column(3,
-                 selectInput("tscale", textOutput("timescalelabel"), choices= tscales, selected='year'),
-                 selectInput("aspect", textOutput("aspectlabel"), choices= aspects,selected = aspects[1]),
-                 selectInput("highlightTS", textOutput("highlightTSlabel"), choices= highlighting),
-                 selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS),
-                 box(textOutput("cntr"),background='light-blue',width=14)
-                 # conditionalPanel(condition="tscale == 'day'",
-                 #                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))
+          fluidRow(plotlyOutput("plotstation", height = 500,width = '100%')),
+          fluidRow(box(textOutput("cntr"),background='light-blue',width=14)),
+          fluidRow(column(2,selectInput("tscale", textOutput("timescalelabel"), choices= tscales, selected='year')),
+                   column(3,selectInput("aspect", textOutput("aspectlabel"), choices= aspects,selected = aspects[1])),
+                   column(2,selectInput("highlightTS", textOutput("highlightTSlabel"), choices= highlighting)),
+                   column(2,selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS)),
+                   column(3,sliderInput("itt", "Period:", min = min(year(y)), max=max(year(y)), 
+                          value = c(min(year(y)),max(year(y))),sep='',round=TRUE))
+                   # conditionalPanel(condition="tscale == 'day'",
+                   #                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))
           ))
         ),
-        tabPanel('Statistics',fluidPage(
+        tabPanel('Statistics & climate',fluidPage(
           #box(title=textOutput("htitle"),status = "success",collapsed = TRUE,
           #    collapsible = TRUE, width="100%", solidHeader = TRUE,
-          column(9, plotlyOutput("histstation", height = 500,width = '100%')),
-          column(3,
+          fluidRow(plotlyOutput("histstation", height = 500,width = '100%')),
+          fluidRow(box(textOutput("hdes"),background='light-blue',width=14),
                  selectInput("timespace", textOutput("timespacelabel"), choices= timespace,selected = timespace[1]),
                  conditionalPanel(condition="input.timespace == 'Annual_cycle_day'",
                                   radioButtons("showlegend", textOutput("yearlabel"), choices = c('Show','Hide'),
                                                selected = "Hide",
-                                               inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL)),
-                 box(textOutput("hdes"),background='light-blue',width=14)
-                 #dateRangeInput('dateRange',
-                 #                label = textOutput("timeperiodlabel"),
-                 #              start = as.Date('1951-01-01'),
-                 #             end = date(),startview = 'year')
+                                               inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL))
           ))
         ),
-        tabPanel('Info',fluidPage(
+        tabPanel('About/Disclaimer',fluidPage(
           #box(title=textOutput("cftitle"),status = "success",collapsed = TRUE, 
           #    collapsible = TRUE, width="100%", solidHeader = TRUE, 
           tags$div(class="header", checked=NA,

@@ -317,6 +317,7 @@ server <- function(input, output, session) {
       y <- 100*y
       attr(y,'unit') <- '%'
     }
+    y <- subset(y,it=c(input$itt[1],input$itt[2]))
     return(y)
   })
   
@@ -406,6 +407,8 @@ server <- function(input, output, session) {
     if (length(grep(tolower('valid'),tolower(input$statistic)))>0) title <- yrs[as.numeric(input$lingo)]
     if (length(grep(tolower('lastrains'),tolower(input$statistic)))>0) title <- days[as.numeric(input$lingo)]
     if (input$statistic=='Specific_day') title=paste(input$it,' (',attr(Y,'unit'),')',sep='')
+    if ( (length(grep(tolower('mean'),tolower(input$statistic)))>0) & 
+         (length(grep(tolower('day'),tolower(title)))>0) ) title <- sub('/day','',title)
     return(title)
   })
   
@@ -686,6 +689,8 @@ server <- function(input, output, session) {
     lab.speficicday[as.numeric(input$lingo)]})
   output$excludelabel <- renderText({
     lab.exclude[as.numeric(input$lingo)]})
+  output$seasonTSlabel <- renderText({
+    lab.season[as.numeric(input$lingo)]})
   output$mapdescription <- renderText({
     paste(descrlab[as.numeric(input$lingo)],explainmapstatistic(input$statistic,input$lingo,types))})
   output$datainterval <- renderText({
