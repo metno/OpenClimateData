@@ -509,7 +509,7 @@ server <- function(input, output, session) {
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
       addProviderTiles(providers$Esri.WorldStreetMap,
                        #addProviderTiles(providers$Stamen.TonerLite,
-                       options = providerTileOptions(noWrap = TRUE)
+                       options = providerTileOptions(noWrap = FALSE)
       ) %>% 
       setView(lat=Y$latitude[is],lng = Y$longitude[is], zoom = zoom())
   })
