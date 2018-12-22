@@ -277,6 +277,9 @@ server <- function(input, output, session) {
     print(paste('selectedID: ',selectedStid,' = ',input$location,'from',updatefile(),
                 "  - y <- retrieve.station(",updatefile(),selectedStid,")"))
     y <- retrieve.station(updatefile(),stid=selectedStid,verbose=verbose)
+    ## Update slider
+    updateSliderInput(session=session,inputId="itt",value = range(year(y)),
+                      min=min(year(y)),max=max(year(y)))
     return(y)
   })
   
@@ -325,6 +328,7 @@ server <- function(input, output, session) {
     Y <- updatemetadata()
     return(Y$location)
   })
+  
   
   ## The following are more general ractive expressions
   zoom <- reactive({
