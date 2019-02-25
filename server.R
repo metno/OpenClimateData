@@ -334,7 +334,7 @@ server <- function(input, output, session) {
   zoom <- reactive({
     zoomscale <- switch(input$src,
                         'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=4,
-                        'INAM'=4,'CLARIS'=5)
+                        'INAM'=5,'CLARIS'=5)
     return(zoomscale)
   })
   
@@ -630,11 +630,16 @@ server <- function(input, output, session) {
         y <- updatestation()
         clim <- climatology(y)
         Z <- diagram(y,plot=FALSE)
+        ## Check if the years of data include current year
+        iyr <- is.element(colnames(Z),format(Sys.Date(),'%Y'))
+        print(paste(sum(iyr),'cases for',format(Sys.Date(),'%Y')))
         nyrs <- dim(Z)[2]
         #colorpal<-colorRampPalette(brewer.pal(9,'Spectral'),nyrs)
         colorpal <- rgb(seq(0,1,length=nyrs),sin(seq(0,pi,length=nyrs))^2,seq(1,0,length=nyrs),0.3)
         colnames(Z) <- paste('y',colnames(Z),sep='')
         yrs <- colnames(Z)
+        ## For current year, use black colour
+        if (sum(iyr)>0) colorpal[iyr] <- rgb(0,0,0)
         mac <- as.data.frame(cbind(coredata(clim),Z))
         mac$day=1:365
         AC <- plot_ly(mac,name='annual_cycle',type='scatter',mode='markers', showlegend = (input$showlegend=='Show')) 
@@ -647,7 +652,7 @@ server <- function(input, output, session) {
           eval(parse(text=cl))
         }
         print(names(mac))
-        AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='black')) %>%
+        AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='grey')) %>%
                      layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
       }
     }
