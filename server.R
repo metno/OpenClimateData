@@ -299,24 +299,26 @@ server <- function(input, output, session) {
     x0 <- as.numeric(input$x0)
     
     ## Time series
-    if (input$tscale != 'day') {
+    if ( (input$tscale != 'day') & (input$timespace != 'Data_matrix') ) {
       print(paste('Use',FUN,'to aggregate the time series. input$tscale=',input$tscale))
       print(c(aspects,input$aspect)); print(x0); print(esd::unit(y))
     }
     
-    if (FUN != 'count')
-      y <- switch(input$tscale,
-                  'day'=y,'month'=as.monthly(y,FUN=FUN),
-                  'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN,nmin=300)) else
-                    y <- switch(input$tscale,
-                                'day'=y,'month'=as.monthly(y,FUN=FUN,threshold=x0,nmin=25),
-                                'season'=as.4seasons(y,FUN=FUN,threshold=x0,nmin=80),
-                                'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300))
+    if (input$timespace != 'Data_matrix') { 
+      if (FUN != 'count')  
+        y <- switch(input$tscale,
+                    'day'=y,'month'=as.monthly(y,FUN=FUN),
+                    'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN,nmin=300)) else
+                      y <- switch(input$tscale,
+                                  'day'=y,'month'=as.monthly(y,FUN=FUN,threshold=x0,nmin=25),
+                                  'season'=as.4seasons(y,FUN=FUN,threshold=x0,nmin=80),
+                                  'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300))
+    }
     #if (is.T(y)) browser()
     
     if (input$aspect=='anomaly') y <- anomaly(y)
     if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
-    if (input$aspect=='wetfreq') {
+    if ( (input$aspect=='wetfreq') & (input$tscale != 'day') ) {
       y <- 100*y
       attr(y,'unit') <- '%'
     }
@@ -580,6 +582,7 @@ server <- function(input, output, session) {
     y0 <- updatestation()
     y <- updatetimeseries()
     
+    print(input$timespace)
     if (input$timespace == 'Histogram_location') yH <- coredata(y) else yH <- statistic
     
     withProgress(message = 'Updating ...',
@@ -591,7 +594,11 @@ server <- function(input, output, session) {
                  })
     #mx <- ceiling(1.1*max(abs(y),na.rm=TRUE))
     #print('histstation'); print(summary(yH))
-    if (substr(input$timespace,1,12) != 'Annual_cycle') {
+    if (input$timespace=='Data_matrix') {
+      print('Plot the data matrix - vis(y)')
+      z <- vis(y,plot=FALSE)
+      p <- plot_ly(x=attr(z,'x'),y=attr(z,'y'), z = t(z), type = "heatmap")
+    } else if (substr(input$timespace,1,12) != 'Annual_cycle') {
       fit <- density(yH[is.finite(yH)])
       #breaks <- seq(floor(min(yH,na.rm=TRUE)),ceiling(max(yH,na.rm=TRUE)),length=100)
       pdf <- dnorm(fit$y,mean=mean(yH,na.rm=TRUE), sd = sd(yH,na.rm=TRUE))

@@ -234,13 +234,13 @@ seaTS <- c('All year'='all','Dec-Feb'='DJF',
 ## Thesholds
 #thresholds <- seq(10,50,by=10)
 
-timespace <- c('Annual_cycle_month','Annual_cycle_day',
+timespace <- c('Annual_cycle_month','Annual_cycle_day','Data_matrix',
                'Histogram_location','Histogram_map')
-timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk',
+timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk','Dag og år',
                           'Stedsstatistikk','Alle stedene'),
-                        c('Månedstatistikk','Døgnstatistikk',
+                        c('Månedstatistikk','Døgnstatistikk','Dag og år',
                           'Stedsstatistikk','Alle stadane'),
-                        c('Monthly statistics','Daily statistics',
+                        c('Monthly statistics','Daily statistics','Year and day',
                           'Histogram','Spatial statstics'))
 timespacedescr <- rbind(c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
                           'Histogram for','Statistikk for steder vist på kartet'),
