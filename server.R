@@ -667,6 +667,25 @@ server <- function(input, output, session) {
   })
   
   
+  output$scatterplot <- renderPlotly({
+    print('output$scatterplot - render')
+    Y <- updatemetadata()
+    Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]])
+    Z <- Z[is.finite(Z[,1]) & is.finite(Z[,2]),]
+    print(summary(Z))
+    fit <- lm(y ~ x, data=Z)
+    print(summary(fit))
+    p <- plot_ly(data = Z, x = ~x, y = ~y,
+                 marker = list(size = 10,
+                               color = 'rgba(255, 182, 193, .9)',
+                               line = list(color = 'rgba(152, 0, 0, .8)',
+                                           width = 2))) %>%
+      layout(title = 'Relations',
+             yaxis = list(zeroline = TRUE),
+             xaxis = list(zeroline = TRUE))
+    #add_lines(p,fit)
+  })
+    
   ## Multi-language support for Text, menues, and labels
   
   output$maintitle <- renderText({
