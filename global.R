@@ -27,17 +27,17 @@ type2name <-function(stattype,lingo,types) {
       "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
       "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
       "Dager med nedbør","Typisk nedbørsintensitet",
-      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder"),
+      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians"),
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
       "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
       "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
       "Dager med nedbør","Typisk nedbørsintensitet",
-      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder"),
+      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians"),
     c("Altitude","Start year","Days without precipitation","End year","Latitude","Longitude","Maximum",           
       "Average","Minimum","Years with data"," Number of record-highs",
       "Trend","Trend in wet days","Trend in rain intensity", 
       "Number of wet days","Mean rain intensity","Number of days above threshold",
-      "Specific date","Standard deviation","Number of record-lows")
+      "Specific date","Standard deviation","Number of record-lows","Variance")
   )
   matchingname <- names[as.numeric(lingo),]
   descr <- matchingname[match(tolower(stattype),tolower(types))]
@@ -222,7 +222,7 @@ sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
            "mean","min","number.valid","records","trend","trend_wetfreq","trend_wetmean", 
-           "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows")
+           "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows","sigma2")
 
 ## Seasons for the statistics presented in the maps
 sea <- c('All year'='all','Dec-Feb'='DJF',
