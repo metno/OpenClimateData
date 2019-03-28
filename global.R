@@ -27,17 +27,20 @@ type2name <-function(stattype,lingo,types) {
       "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
       "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
       "Dager med nedbør","Typisk nedbørsintensitet",
-      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians"),
+      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians",
+      "Varianstrend","10-år-returverdi"),
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
       "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
       "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
       "Dager med nedbør","Typisk nedbørsintensitet",
-      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians"),
+      "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians",
+      "Varianstrend","10-år-returverdi"),
     c("Altitude","Start year","Days without precipitation","End year","Latitude","Longitude","Maximum",           
       "Average","Minimum","Years with data"," Number of record-highs",
       "Trend","Trend in wet days","Trend in rain intensity", 
       "Number of wet days","Mean rain intensity","Number of days above threshold",
-      "Specific date","Standard deviation","Number of record-lows","Variance")
+      "Specific date","Standard deviation","Number of record-lows","Variance",
+      "Trend in variance","10-year-return-value")
   )
   matchingname <- names[as.numeric(lingo),]
   descr <- matchingname[match(tolower(stattype),tolower(types))]
@@ -58,7 +61,9 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Dager med nedbør (%)","Gjennomsnittlig nedbørsmengde for dager det regner mer enn 1mm (mm/dag)",
       "Forventet antall dager over terskelverdi","Målte verdier for en valgt dag",
       "Standardavvik av avvik fra normalen over et år eller en sesong",
-      "Forholdet (i %) mellom antall registrerte rekorder og hva man forventer i et stabilt klima"),
+      "Forholdet (i %) mellom antall registrerte rekorder og hva man forventer i et stabilt klima",
+      "Estimert varians i døgnnedbør","Trend i estimert varians i døgnnedbør",
+      "Et grovt estimat av 10-års-returverdi basert på enkel modell"),
     c("Høgde over havet i meter (metadata)","Året da mælingane starta (metadata)",
       "Kor mange dagar det har gått utan nedbør",
       "Siste år med mælinger (metadata)","Mælestasjonens breddegrad (metadata)",
@@ -71,7 +76,9 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Dagar med nedbør (%)","Gjennomsnittleg nedbørsmengde for dager det regner meir enn 1mm (mm/dag)",
       "Forventa antall dagar over terskelverdi","Mælte verdier for ein vald dag",
       "Standardavvik av avvik fra normalen over eit år eller ein sesong",
-      "Forholdet (i %) mellom antall registrerte rekordar og kva ein forventer i eit stabilt klima"),
+      "Forholdet (i %) mellom antall registrerte rekordar og kva ein forventer i eit stabilt klima",
+      "Estimert varians i døgnnedbør","Trend i estimert varians i døgnnedbør",
+      "Et grovt estimat av 10-års-returverdi basert på enkel modell"),
     c("The elevation of the station in m above sea level (metadata))",
       "The year when the observations started (metadata)","Number of days since it last rained",
       "The last year with observations (metadata)","The latitude of the station in degrees north (metadata)",
@@ -87,7 +94,9 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "The expected number of days above threshold",
       "Observations made for a specific date",
       "The standard deviation of anomalies over the whole year or seasons",
-      "The number of record-highs compared to expected number given a stable climate (%)")
+      "The number of record-highs compared to expected number given a stable climate (%)",
+      "Estimated variance in daily rainfall","Trend in estimated daily rainfall variance",
+      "Simple and approximate estimate of the 10-year-return-value")
   )
   print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
@@ -112,6 +121,8 @@ getstattype <- function(fname,lingo=NULL) {
   if (length(grep("last_element_lowest",stattype))>0) {
     stattype <- stattype[-grep("last_element_lowest",stattype)]
   }
+  if ( (length(grep('wetmean',names(meta)))>0) & (length(grep('wetfreq',names(meta)))>0) )
+    stattype <- c(stattype,'10.year.return.value')
   stattype <- c(stattype,'Number_of_days','Specific_day')
   if (!is.null(lingo)) {
     names(stattype) <- type2name(stattype,lingo,types)
@@ -222,7 +233,7 @@ sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
            "mean","min","number.valid","records","trend","trend_wetfreq","trend_wetmean", 
-           "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows","sigma2")
+           "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows","sigma2","trend_sigma2","10.year.return.value")
 
 ## Seasons for the statistics presented in the maps
 sea <- c('All year'='all','Dec-Feb'='DJF',

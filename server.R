@@ -156,7 +156,7 @@ server <- function(input, output, session) {
     }
     
     step <- max(c(min(c(1,round((start2 - start1)/100,1))),0.1))
-      
+    
     #print(statistic)
     print(paste('Slider max & min= [',statisticmin,', ',statisticmax,'] n=',length(statistic),
                 ' default:',start1,start2,' input$ci=',input$ci,sep=''))
@@ -350,45 +350,47 @@ server <- function(input, output, session) {
     showseason <- switch(input$season,
                          'all'='','DJF'='_DJF','MAM'='_MAM','JJA'='_JJA','SON'='_SON')
     print(paste('Y$',input$statistic,showseason,sep=''))
-    if ( (tolower(input$statistic)!='number_of_days') &
-         (tolower(input$statistic)!='specific_day') ) {
-      #print('Get the summary statistics from the netCDF file'); print(tolower(input$statistic))
-      Z <- eval(parse(text=paste('Y$',input$statistic,showseason,sep=''))) 
-    } else {
-      if (tolower(input$statistic)=='number_of_days') {
-        print('Number_of_days')
-        x0 <- as.numeric(input$x0)
-        print(paste('threshold x0=',x0))
-        if (!is.null(Y$wetfreq)) Z <- switch(input$season,
-                                             'all'=3.6525*Y$wetfreq*exp(-x0/Y$wetmean),
-                                             'DJF'=0.90*Y$wetfreq_DJF*exp(-x0/Y$wetmean_DJF),
-                                             'MAM'=0.90*Y$wetfreq_MAM*exp(-x0/Y$wetmean_MAM),
-                                             'JJA'=0.90*Y$wetfreq_JJA*exp(-x0/Y$wetmean_JJA),
-                                             'SON'=0.90*Y$wetfreq_SON*exp(-x0/Y$wetmean_SON)) else
-                                               Z <- switch(input$season,
-                                                           'all'=365.25*(1-pnorm(x0,mean=0,sd=Y$sd)),
-                                                           'DJF'=90*(1-pnorm(x0,mean=Y$mean_DJF,sd=Y$sd_DJF)),
-                                                           'MAM'=90*(1-pnorm(x0,mean=Y$mean_MAM,sd=Y$sd_MAM)),
-                                                           'JJA'=90*(1-pnorm(x0,mean=Y$mean_JJA,sd=Y$sd_JJA)),
-                                                           'SON'=90*(1-pnorm(x0,mean=Y$mean_SON,sd=Y$sd_SON))) 
-        Z <- as.numeric(Z)
+    if (tolower(input$statistic)=='10.year.return.value') Z <- -Y$wetmean*log(1/(Y$wetfreq*36.525))*1.4 - 3.82 else 
+      if ( (tolower(input$statistic)!='number_of_days') &
+           (tolower(input$statistic)!='specific_day') ) {
+        #print('Get the summary statistics from the netCDF file'); print(tolower(input$statistic))
+        Z <- eval(parse(text=paste('Y$',input$statistic,showseason,sep=''))) 
       } else {
-        ## Get a specific date it
-        it <- input$it
-        print("Read a specific date from the netCDF file"); print(it); print(updatefile())
-        x <- retrieve.station(updatefile(),it=it,verbose=verbose)
-        Z <- c(coredata(x))
-        dim(Z) <- c(length(Z),1)
-        ## The stations are sorted according to alphabetic order
-        Z <- Z[match(Y$station.id,stid(x))]
-        print(rbind(stid(x),Y$station.id))
-        print(summary(Z))
-        print('...')
-      }
-    } 
+        if (tolower(input$statistic)=='number_of_days') {
+          print('Number_of_days')
+          x0 <- as.numeric(input$x0)
+          print(paste('threshold x0=',x0))
+          if (!is.null(Y$wetfreq)) Z <- switch(input$season,
+                                               'all'=3.6525*Y$wetfreq*exp(-x0/Y$wetmean),
+                                               'DJF'=0.90*Y$wetfreq_DJF*exp(-x0/Y$wetmean_DJF),
+                                               'MAM'=0.90*Y$wetfreq_MAM*exp(-x0/Y$wetmean_MAM),
+                                               'JJA'=0.90*Y$wetfreq_JJA*exp(-x0/Y$wetmean_JJA),
+                                               'SON'=0.90*Y$wetfreq_SON*exp(-x0/Y$wetmean_SON)) else
+                                                 Z <- switch(input$season,
+                                                             'all'=365.25*(1-pnorm(x0,mean=0,sd=Y$sd)),
+                                                             'DJF'=90*(1-pnorm(x0,mean=Y$mean_DJF,sd=Y$sd_DJF)),
+                                                             'MAM'=90*(1-pnorm(x0,mean=Y$mean_MAM,sd=Y$sd_MAM)),
+                                                             'JJA'=90*(1-pnorm(x0,mean=Y$mean_JJA,sd=Y$sd_JJA)),
+                                                             'SON'=90*(1-pnorm(x0,mean=Y$mean_SON,sd=Y$sd_SON))) 
+          Z <- as.numeric(Z)
+        } else {
+          ## Get a specific date it
+          it <- input$it
+          print("Read a specific date from the netCDF file"); print(it); print(updatefile())
+          x <- retrieve.station(updatefile(),it=it,verbose=verbose)
+          Z <- c(coredata(x))
+          dim(Z) <- c(length(Z),1)
+          ## The stations are sorted according to alphabetic order
+          Z <- Z[match(Y$station.id,stid(x))]
+          print(rbind(stid(x),Y$station.id))
+          print(summary(Z))
+          print('...')
+        }
+      } 
     if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
     if (input$statistic=='records') Z <- 100*Z
     if (input$statistic=='lows') Z <- 100*Z
+    if (tolower(input$statistic)=='sigma2') Z[Z > 20000] <- NA
     Z[Z <= -99] <- NA
     Z <- round(Z,3)
     print(paste('+++ Values returned by vals(): n=',length(Z),'range= [',min(Z,na.rm=TRUE),max(Z,na.rm=TRUE),'] +++'))
@@ -422,22 +424,22 @@ server <- function(input, output, session) {
   
   observe({
     print('observe - marker click')
-
+    
     mapid2 <- leafletProxy("mapid") %>% clearPopups()
     event <- input$map_marker_click
     #print('Data Explorer from map'); print(event$id)
     if (is.null(event))
       return()
-
+    
     #print('Click --->'); print(event); print('<--- Click')
     isolate({
-    mapid <- showMetaPopup(mapid2,stid=event$id,lat=event$lat, lng = event$lng,ci = as.numeric(input$ci))
+      mapid <- showMetaPopup(mapid2,stid=event$id,lat=event$lat, lng = event$lng,ci = as.numeric(input$ci))
     })
-
+    
     #removeMarker("map",layerId = event$id)
     leafletProxy("mapid",data = event) %>%
       addCircles(lng = event$lng, lat = event$lat,color = 'red',layerId = 'selectID', weight = 12)
-
+    
     #selectedStid <- event$id
   })
   
@@ -484,7 +486,7 @@ server <- function(input, output, session) {
     #print(c(sum(filter),length(filter),length(statistic)))
     pal <- colorBin(colscal(col = 't2m',n=10),
                     seq(input$statisticrange[1],input$statisticrange[2],length=10),bins = 10,pretty = TRUE,reverse=reverse)    
-   
+    
     is <- which(tolower(Y$location) == tolower(input$location))[1]
     good <- is.finite(Y$longitude) & is.finite(Y$latitude)
     Y <- Y[good,]; statistic <- statistic[good]; filter <- filter[good]
@@ -523,7 +525,7 @@ server <- function(input, output, session) {
   output$plotstation <- renderPlotly({
     print('output$plotstation - render')
     print(paste('Time series for',input$location,'ci=',input$ci,'season=',input$season,
-                         'tscale=',input$tscale,'aspect=',input$aspect))
+                'tscale=',input$tscale,'aspect=',input$aspect))
     y <- updatetimeseries()
     print(summary(coredata(y)))
     #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
@@ -558,7 +560,7 @@ server <- function(input, output, session) {
       print(summary(timeseries))
       TS <- plot_ly(timeseries,x=~date,y=~obs,type = 'scatter',mode='lines',name='observed',color=rgb(0,0,0))
       TS <- TS %>% add_trace(y=~trend,name='trend',color=rgb(1,0,0)) %>% 
-                   add_trace(y=~pr,name="predicted",color=rgb(0,0,1,0.5)) %>%
+        add_trace(y=~pr,name="predicted",color=rgb(0,0,1,0.5)) %>%
         layout(title=loc(y),yaxis = list(title='days/year'))
     } else {
       timeseries <- data.frame(date=index(y),y=coredata(y),trend=coredata(trend(y)))
@@ -575,7 +577,7 @@ server <- function(input, output, session) {
   output$histstation <- renderPlotly({
     print('output$histstation - render')
     print(paste('Time series for',input$location,'ci=',input$ci,'season=',input$season,
-                         'tscale=',input$tscale,'aspect=',input$aspect))
+                'tscale=',input$tscale,'aspect=',input$aspect))
     ## Get summary data from the netCDF file
     Y <- updatemetadata()
     statistic <- vals()
@@ -650,7 +652,7 @@ server <- function(input, output, session) {
         mac <- as.data.frame(cbind(coredata(clim),Z))
         mac$day=1:365
         AC <- plot_ly(mac,name='annual_cycle',type='scatter',mode='markers', showlegend = (input$showlegend=='Show')) 
-
+        
         for (i in 1:length(yrs)) {
           cl <- paste("AC <- AC %>% add_lines(data=mac, y = ~",yrs[i],", x = ~day,",
                       "type = 'scatter', mode = 'markers', line = list(width = 2,shape ='spline',color=colorpal[",
@@ -660,7 +662,7 @@ server <- function(input, output, session) {
         }
         print(names(mac))
         AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='grey')) %>%
-                     layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
+          layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
       }
     }
     
@@ -669,6 +671,7 @@ server <- function(input, output, session) {
   
   output$scatterplot <- renderPlotly({
     print('output$scatterplot - render')
+    statistic <- vals()
     Y <- updatemetadata()
     Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]])
     Z <- Z[is.finite(Z[,1]) & is.finite(Z[,2]),]
@@ -685,7 +688,7 @@ server <- function(input, output, session) {
              xaxis = list(zeroline = TRUE))
     #add_lines(p,fit)
   })
-    
+  
   ## Multi-language support for Text, menues, and labels
   
   output$maintitle <- renderText({
@@ -754,7 +757,7 @@ server <- function(input, output, session) {
     if (substr(input$timespace,1,12) != 'Annual_cycle') {
       if (input$timespace=='Histogram_map') 
         hsum <- paste('Data= ',input$statistic,' ', attr(Y,'longname'),': ',paste(names(syH),round(syH,1),collapse=', ',sep='='),sep='') else
-        hsum <- paste(syH,collapse=', ',sep='=')
+          hsum <- paste(syH,collapse=', ',sep='=')
     } else {
       hsum <- paste(attr(y,'longname'),'period=',paste(range(index(y)),collapse='-'))
     }
@@ -763,8 +766,8 @@ server <- function(input, output, session) {
     if (input$timespace == 'Histogram_location') {
       if (is.precip(y)) hdescr <- paste(hdescr,'. Time scale= ',input$tscale,', aspect= ',
                                         aspectnameP[as.numeric(input$lingo),is.element(aspectsP,input$aspect)],sep='') else
-                        hdescr <- paste(hdescr,'. Time scale= ',input$tscale,', aspect= ',
-                                        aspectnameT[as.numeric(input$lingo),is.element(aspectsT,input$aspect)],sep='')
+                                          hdescr <- paste(hdescr,'. Time scale= ',input$tscale,', aspect= ',
+                                                          aspectnameT[as.numeric(input$lingo),is.element(aspectsT,input$aspect)],sep='')
     }
     print(c(hdescr,hsum))
     paste(hdescr,'. ',hsum,'. Sample size= ',sum(is.finite(yH)),' data points.',sep='')
