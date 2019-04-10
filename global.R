@@ -282,6 +282,7 @@ lab.statitics <- c("Nøkkeltall","Nøkkeltal","Show quantity")
 lab.date <- c("Utvalgt dato","Utvald dato","A specific day")
 lab.highlight <- c('Uthev','Uthev','Highlight')
 lab.exclude <- c('Ekcluder','Eksluder','Exclude')
+relationstitle <- c("Relasjoner","Samanhengar","Relations")
 aspectsP <- c("sum","wetfreq","wetmean","Number_of_days")
 aspectnameP <- rbind(c("Nedbørsmengde","Nedbørsfrekvens","Nedbørsintensitet","Antall dager med mye nedbør"),
                      c("Nedbørsmengde","Nedbørsfrekvens","Nedbørsintensitet","Antall dager med mye nedbør"),

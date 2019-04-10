@@ -482,6 +482,7 @@ server <- function(input, output, session) {
       filter <- rep(TRUE,length(statistic))  
     }
     if (sum(is.element(vids[as.numeric(input$ci)],c('precip','sd')))>0) reverse <- TRUE else reverse <- FALSE
+    if (input$statistic=="lastrains") reverse <- FALSE
     #print(paste('Reverse palette =',reverse)); print(summary(statistic))
     #print(c(sum(filter),length(filter),length(statistic)))
     pal <- colorBin(colscal(col = 't2m',n=10),
@@ -491,6 +492,8 @@ server <- function(input, output, session) {
     good <- is.finite(Y$longitude) & is.finite(Y$latitude)
     Y <- Y[good,]; statistic <- statistic[good]; filter <- filter[good]
     if ( (length(is)==0) | is.na(is) ) is <- 1
+    radius <- rep(input$rad,length(statistic[filter]))
+    radius[!is.finite(statistic[filter])] <- 1
     
     print(paste('The map is being rendered:','Number of locations shown=',sum(filter),'with',sum(!is.finite(statistic)),
                 'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
@@ -503,7 +506,7 @@ server <- function(input, output, session) {
                        label = as.character(round(statistic[filter],digits = 2)),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
-                       radius =4,stroke=TRUE,weight = 1, color='black',
+                       radius =radius,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
       addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
@@ -684,21 +687,21 @@ server <- function(input, output, session) {
         lcol <- 'rgba(150, 150, 150, .8)'
         lwidth <- 1
       }
-    Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col)
+    if (input$xy_size=="Uniform") size <- rep(10,n) else {
+      z <- Y[[input$xy_size]]
+      size <- 30*sqrt( (z - min(z,na.rm=TRUE))/(max(z,na.rm=TRUE) - min(z,na.rm=TRUE)) )
+    }
+    Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col, 
+                    size=size,name=paste(Y$location,Y$station.id))
+    size <- size[is.finite(Z[,1]) & is.finite(Z[,2])]
     Z <- Z[is.finite(Z[,1]) & is.finite(Z[,2]),]
     print(summary(Z))
     fit <- lm(y ~ x, data=Z)
     print(summary(fit))
     
-    if (input$xy_size=="Uniform") size <- 10 else {
-      z <- Y[[input$xy_size]]
-      size <- 30*sqrt( (z - min(z,na.rm=TRUE))/(max(z,na.rm=TRUE) - min(z,na.rm=TRUE)) )
-    }
-    p <- plot_ly(data = Z, x = ~x, y = ~y, color= ~Col,
-                 marker = list(size = size,
-                               #color = col,
-                               line = list(color = lcol, width = lwidth))) %>%
-      layout(title = 'Relations',
+    p <- plot_ly(data = Z, x = ~x, y = ~y, color= ~Col,name=~name,showlegend = FALSE,
+                 marker = list(size=size,line = list(color = lcol, width = lwidth))) %>%
+      layout(title = 'x/y',
              yaxis = list(title=input$x_variable, zeroline = TRUE),
              xaxis = list(title=input$y_variable,zeroline = TRUE))
     #add_lines(p,fit)
@@ -789,4 +792,6 @@ server <- function(input, output, session) {
   })
   output$yearlabel <- renderText({
     showhideyears[as.numeric(input$lingo)]})
+  output$relations <- renderText({
+    relationstitle[as.numeric(input$lingo)]})
 }

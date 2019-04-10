@@ -74,8 +74,9 @@ ui <- dashboardPage(
                                               dateInput("it",textOutput("daylabel"), value=attr(Y,'period')[2]))),
                    fluidRow(leafletOutput("map",height = 700)),
                    fluidRow(box(tags$h4(textOutput('mapdescription')),width=12),
-                   sliderInput("statisticrange", "Range:", min = statisticmin, max=statisticmax, 
-                                         value = c(statisticmin,statisticmax),sep='',round=TRUE)))
+                   column(6, sliderInput("statisticrange", "Range:", min = statisticmin, max=statisticmax, 
+                                         value = c(statisticmin,statisticmax),sep='',round=TRUE)),
+                   column(6, sliderInput("rad", "Symbol size:", min = 1, max=10, value = 4,sep=''))))
         )
         ),
         tabPanel('Past Weather',fluidPage(
