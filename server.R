@@ -673,19 +673,34 @@ server <- function(input, output, session) {
     print('output$scatterplot - render')
     statistic <- vals()
     Y <- updatemetadata()
-    Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]])
+    n <- dim(Y)[1]
+    print(n)
+    if (input$xy_col=="Red") {
+      Col <- rep('rgba(255, 182, 193, .9)',n) 
+      lcol <- 'rgba(152, 0, 0, .8)'
+      lwidth <- 2
+      } else {
+        Col <-Y[[input$xy_col]]
+        lcol <- 'rgba(150, 150, 150, .8)'
+        lwidth <- 1
+      }
+    Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col)
     Z <- Z[is.finite(Z[,1]) & is.finite(Z[,2]),]
     print(summary(Z))
     fit <- lm(y ~ x, data=Z)
     print(summary(fit))
-    p <- plot_ly(data = Z, x = ~x, y = ~y,
-                 marker = list(size = 10,
-                               color = 'rgba(255, 182, 193, .9)',
-                               line = list(color = 'rgba(152, 0, 0, .8)',
-                                           width = 2))) %>%
+    
+    if (input$xy_size=="Uniform") size <- 10 else {
+      z <- Y[[input$xy_size]]
+      size <- 30*sqrt( (z - min(z,na.rm=TRUE))/(max(z,na.rm=TRUE) - min(z,na.rm=TRUE)) )
+    }
+    p <- plot_ly(data = Z, x = ~x, y = ~y, color= ~Col,
+                 marker = list(size = size,
+                               #color = col,
+                               line = list(color = lcol, width = lwidth))) %>%
       layout(title = 'Relations',
-             yaxis = list(zeroline = TRUE),
-             xaxis = list(zeroline = TRUE))
+             yaxis = list(title=input$x_variable, zeroline = TRUE),
+             xaxis = list(title=input$y_variable,zeroline = TRUE))
     #add_lines(p,fit)
   })
   

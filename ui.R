@@ -109,7 +109,7 @@ ui <- dashboardPage(
           fluidRow(plotlyOutput("scatterplot", height = 500,width = '100%')),
           fluidRow(column(3,selectInput("x_variable", "X", choices= stattype,selected = "mean")),
                    column(3,selectInput("y_variable", "Y", choices= stattype,selected = "altitude")),
-                   column(3,selectInput("xy_col", "Colouring", choices= c('None',stattype),selected = "None")),
+                   column(3,selectInput("xy_col", "Colouring", choices= c('Red',stattype),selected = "None")),
                    column(3,selectInput("xy_size", "Marker size", choices= c('Uniform',stattype),selected = "Uniform"))
           ))
         ),
