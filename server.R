@@ -702,8 +702,13 @@ server <- function(input, output, session) {
     p <- plot_ly(data = Z, x = ~x, y = ~y, color= ~Col,name=~name,showlegend = FALSE,
                  marker = list(size=size,line = list(color = lcol, width = lwidth))) %>%
       layout(title = 'x/y',
+<<<<<<< HEAD
+             yaxis = list(title=input$y_variable, zeroline = TRUE),
+             xaxis = list(title=input$x_variable,zeroline = TRUE))
+=======
              yaxis = list(title=input$x_variable, zeroline = TRUE),
              xaxis = list(title=input$y_variable,zeroline = TRUE))
+>>>>>>> c35277c4293da38027cd8d4aaf5f264538939a94
     #add_lines(p,fit)
   })
   
