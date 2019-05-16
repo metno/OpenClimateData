@@ -280,7 +280,7 @@ names(timespace) <- timespacenames[1,]
 ## Set the optional labels and titles in the menu based on chosen language 
 languages <- 1:3; language.names <- c('Bokmål','Nynorsk','English')
 maintitle <- c('Klimamålinger','Klimamælinger','Climatology')
-maptitle <- c('Velg sted','Vel stad','Map of elements')
+maptitle <- c('Velg sted','Vel stad','Map of stations')
 tstitle <- c('Historisk vær','Historisk vêr','Past weather')
 etitle <- c('Utforsk','Utforsk','Explore')
 htitle <- c('Værtatistikk','Vêrstatistikk','Past climate')
