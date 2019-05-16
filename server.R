@@ -433,7 +433,7 @@ server <- function(input, output, session) {
   
   legendtitle <- reactive({
     Y <- updatemetadata()
-    #print('legendtitle'); print(stattype); print(input$statistic); print(input$lingo)
+    print('legendtitle'); print(stattype); print(input$statistic); print(input$lingo)
     #title <- type2name(input$statistic,input$lingo,stattype)
     #if ( (length(grep(attr(Y,'unit')$value,title))==0) & (length(grep('%',title))==0) )
     #  title <- paste(title,' (',attr(Y,'unit')$value,')',sep='')
@@ -447,10 +447,13 @@ server <- function(input, output, session) {
     if ( (length(grep(tolower('first.year'),tolower(input$statistic)))>0) | 
          (length(grep(tolower('last.year'),tolower(input$statistic)))>0) ) title <- yr[as.numeric(input$lingo)]
     if (length(grep(tolower('valid'),tolower(input$statistic)))>0) title <- yrs[as.numeric(input$lingo)]
-    if (length(grep(tolower('lastrains'),tolower(input$statistic)))>0) title <- days[as.numeric(input$lingo)]
+    if (sum(is.element(tolower(input$statistic), c('lastrains','mean_wetdur','mean_drydur','number_of_days')))>0) 
+          title <- days[as.numeric(input$lingo)]
     if (input$statistic=='Specific_day') title=paste(input$it,' (',attr(Y,'unit'),')',sep='')
     if ( (length(grep(tolower('mean'),tolower(input$statistic)))>0) & 
          (length(grep(tolower('day'),tolower(title)))>0) ) title <- sub('/day','',title)
+    if (length(grep(tolower('sigma2'),tolower(input$statistic)))>0) title <- 'mm^2'
+    print(paste('legend title',title))
     return(title)
   })
   
