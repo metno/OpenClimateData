@@ -3,9 +3,10 @@
 ### Rasmus Benestad
 ###----------------------------------
 
-titlePanel("title panel")
+titlePanel("OpenClimateDataPrototype")
 
 ui <- dashboardPage(
+  title="OpenClimateDataPrototype",
   skin="green",
   dashboardHeader(title = textOutput("maintitle")),
   dashboardSidebar(

@@ -310,7 +310,7 @@ server <- function(input, output, session) {
       meanx <- switch(input$tscale,
                       'month'=as.monthly(y,FUN='mean',nmin=25),
                       'season'=as.4seasons(y,FUN='mean',nmin=80),
-                      'year'=as.annual(y,FUN=,nmin=300))
+                      'year'=as.annual(y,FUN='mean',nmin=300))
       sdx <- switch(input$tscale,
                     'month'=as.monthly(y,FUN='sd',nmin=25),
                     'season'=as.4seasons(y,FUN='sd',nmin=80),
@@ -512,7 +512,8 @@ server <- function(input, output, session) {
     lon.highlight <- Y$longitude[filter][highlight]
     lat.highlight <- Y$latitude[filter][highlight]
     if (tolower(input$highlight) != "none") {
-      print('Highlight');print(statistic[highlight]); print(lon.highlight); print(lat.highlight); print(input$ci); print(input$highlight)
+      print(paste('Highlight',input$highlight))
+      print(statistic[highlight]); print(lon.highlight); print(lat.highlight)
     }
     if (sum(filter)==0) {
       print(paste(input$ci,esd::varid(y),min(statistic),max(statistic),input$statisticrange[1],input$statisticrange[2]))
@@ -540,18 +541,24 @@ server <- function(input, output, session) {
     leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
                        lat = Y$latitude[filter],fill = TRUE, # latitude
-                       label = paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))),
+                       label = paste(Y$location,as.character(round(statistic,digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
                        radius =radius,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
-      addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
+      addCircleMarkers(lng = Y$longitude[is], lat = Y$latitude[is],fill=FALSE,
                        label=as.character(1:10),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
-                       radius=5,stroke=TRUE, weight=5, color='black',
+                       radius=6,stroke=TRUE, weight=3, color='green',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
+      addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
+                       label=paste0('#',1:10,': ',Y$location[highlight],' - ',as.character(round(statistic[highlight],digits = 2))),
+                       labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
+                       radius=6,stroke=TRUE, weight=3, color='black',
+                       layerId = Y$station.id[filter][highlight],
+                       fillOpacity = 0.1,fillColor=rep("black",10)) %>%
       addLegend("topright", pal=pal, values=round(statistic[filter], digits = 2), 
                 title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
