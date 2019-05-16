@@ -592,12 +592,12 @@ server <- function(input, output, session) {
               highlight10 <- y[1:10]+NA
     #print(highlight10)
     
-    # withProgress(message = 'Updating ...',
-    #              detail = 'This may take a while...', value = 0,
-    #              { for (i in 1:15) {
-    #                incProgress(1/15)
-    #                Sys.sleep(0.05)}
-    #              })
+    withProgress(message = 'Updating ...',
+                 detail = 'This may take a while...', value = 0,
+                 { for (i in 1:15) {
+                   incProgress(1/15)
+                   Sys.sleep(0.07)}
+                 })
     
     print('The timeseries is being rendered')
     if ( (!is.null(dim(y))) & ((input$aspect=="Number_of_days")  | (input$aspect=="Days_above_normal"))  ){
