@@ -521,6 +521,8 @@ server <- function(input, output, session) {
     }
     if (sum(is.element(vids[as.numeric(input$ci)],c('precip','sd')))>0) reverse <- TRUE else reverse <- FALSE
     if ((input$statistic=="lastrains") | (input$statistic=="mean_drydur")) reverse <- FALSE
+    if((input$statistic=="trend_wetfreq") | (input$statistic=="trend_wetmean") |
+        (input$statistic=="wetfreq") | (input$statistic=="wetmean")) reverse <- TRUE
     #print(paste('Reverse palette =',reverse)); print(summary(statistic))
     #print(c(sum(filter),length(filter),length(statistic)))
     pal <- colorBin(colscal(col = 't2m',n=10),
