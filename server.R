@@ -15,13 +15,13 @@ server <- function(input, output, session) {
   }, ignoreNULL = FALSE)
   
   
-  # Show a popup at the given location
+  ## Show a popup at the given location
   showMetaPopup <- function(mapid,stid, lat, lng, ci) {
     #3 Make sure that only one station ID is selected and only one latitude/longitude
     if (length(stid)>1) stid <- stid[1]
     if (length(lat)>1) lat <- lat[1]
     if (length(lng)>1) lng <- lng[1]
-    
+
     print(paste('showMetaPopup() ===',stid,round(lat,2),round(lng,2),ci))
     Y <- updatemetadata()
     statistic <- vals()
@@ -34,37 +34,21 @@ server <- function(input, output, session) {
     #print(c(stid,selLon,selLat,location))
     content <- paste(sep = "<br/>",
                      tags$strong(HTML(toupper(location))),
-                     tags$strong(HTML(paste('LON ',selLon,'W',sep=''), 
-                                      paste(' LAT ',selLat,'N',sep=''), 
-                                      paste(' ALT ',selAlt,'m',sep=''))), 
+                     tags$strong(HTML(paste('LON ',selLon,'W',sep=''),
+                                      paste(' LAT ',selLat,'N',sep=''),
+                                      paste(' ALT ',selAlt,'m',sep=''))),
                      sprintf("Station ID: %s", as.character(stid)),
                      sprintf("%s", value),
                      sprintf("Interval: %s", paste(Y$first.year[Y$station.id == stid],Y$last.year[Y$station.id == stid],sep = '-'))
     )
-    
+
     mapid <- mapid %>% addPopups(lng, lat, content,layerId = stid)
     return(mapid)
   }
   
   ## Events ---------------------------------------------------------------------------------------------------------
   ## Used to perform an action in response to an event. 
-  
-  # Click on the map marker
-  observeEvent(input$map_marker_click,{
-    print("observeEvent() - click")
-    fnames <- updatefilenames()
-    Y <- updatemetadata()
-    event <- input$map_marker_click
-    #print(paste('Updated ',input$location)); print(event$id)
-    selected <- which(Y$station.id == event$id)
-    
-    #if (input$exclude== 'Selected') filter[selected] <- FALSE
-    updateSelectInput(session,inputId = 'location',label=lab.location[as.numeric(input$lingo)],
-                      choices=Y$location,selected = Y$location[selected])
-    print('---click---')
-  })
-  
-  # When new data source/region is selected
+  ##When new data source/region is selected
   observeEvent(input$src, {
     ## Get the file names of the data
     print(paste("observeEvent(input$src=",input$src,') - update {Y, varids, statistics}:'))
@@ -81,28 +65,44 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=prec)
   })
   
-  ## Change language
+  ## Click on the map marker - this updates the station location in the left panel
+  observeEvent(input$map_marker_click,{
+    print("observeEvent() - click")
+    fnames <- updatefilenames()
+    Y <- updatemetadata()
+    event <- input$map_marker_click
+    #print(paste('Updated ',input$location)); print(event$id)
+    selected <- which(Y$station.id == event$id)
+
+    #if (input$exclude== 'Selected') filter[selected] <- FALSE
+    updateSelectInput(session,inputId = 'location',label=lab.location[as.numeric(input$lingo)],
+                      choices=Y$location,selected = Y$location[selected])
+    print('---click---')
+  })
+  
+  
+  ## Change language in some of the roll-down menues
   observeEvent(input$lingo, {
     print(paste("observeEvent(input$lingo=",input$lingo,')'))
     #tscales <- c("day","month","season","year")
     #print(varids)
     names(tscales) <- timescales[as.numeric(input$lingo),]
     updateSelectInput(session=session,inputId="tscale",choices=tscales,selected=input$tscale)
-    
+
     ci <- updateci()
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=input$ci)
-    
+
     names(src) <- regions[as.numeric(input$lingo),match(src,source.regions)]
     #print(src)
     updateSelectInput(session=session,inputId="src",choices=src,selected=input$src)
-    
+
     names(stattype) <- type2name(stattype,input$lingo,types)
     #print(stattype)
     updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
-    
+
     names(timespace) <- timespacenames[as.numeric(input$lingo),]
     updateSelectInput(session=session,inputId="timespace",choices=timespace,selected=input$timespace)
-    #print('---lingo---')
+    print('---lingo---')
   })
   
   ## Change the time scale for the time series box
@@ -118,12 +118,14 @@ server <- function(input, output, session) {
   ## Reactive expressions that read reactive values and call reactive expressions, and will automatically 
   ## re-execute when those dependencies change.
   
+  ## Update the list of available statistics in the drop-down menues:
   observe({
     print('observe - Update statistics')
     updateSelectInput(session=session,inputId="statistic",
                       choices=getstattype(updatefile(),lingo=input$lingo),selected="mean")
   })
   
+  ## Update the list of locations in the drop-down menues
   observe({
     print('observe - Update location')
     Y <- updatemetadata()
@@ -136,11 +138,11 @@ server <- function(input, output, session) {
   })
   
   
-  ## When something happens
+  ## Update the slider for range of values shown on the map
   observe({
     print('observe - update slider')
     statistic <- vals()
-    if (max(abs(statistic),na.rm=TRUE)>10) digits <- 0 else 
+    if (max(abs(statistic),na.rm=TRUE)>10) digits <- 0 else
       if (max(abs(statistic),na.rm=TRUE)>1) digits <- 1 else
         digits <- 2
     if (tolower(substr(input$statistic,1,5)) != 'trend') {
@@ -154,9 +156,9 @@ server <- function(input, output, session) {
       start2 <- round(quantile(abs(statistic),0.975,na.rm=TRUE),digits)
       start1 <- -start2
     }
-    
+
     step <- max(c(min(c(1,round((start2 - start1)/100,1))),0.1))
-    
+
     #print(statistic)
     print(paste('Slider max & min= [',statisticmin,', ',statisticmax,'] n=',length(statistic),
                 ' default:',start1,start2,' input$ci=',input$ci,sep=''))
@@ -164,6 +166,7 @@ server <- function(input, output, session) {
                       min=statisticmin,max=statisticmax,step=step)
   })
   
+  # Update the list of aspects in the past weather box:
   observe({
     print(paste('observe - Update aspects: input$ci=',input$ci,'input$lingo=',input$lingo))
     varids <- updatevarids()
@@ -182,7 +185,7 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
   })
   
-  
+  ## Updates the countries in thedrop-down list
   observe({
     print('observe - Update country list')
     Y <- updatemetadata()
@@ -191,11 +194,23 @@ server <- function(input, output, session) {
                       selected='All')
   })
   
+  
+  
   ## Reactive expressions to update information -------------------------------------------------------------- 
   
-  # thresh <- reactive({
-  #   return(as.numeric(input$thresh))
-  # })
+  ## The following expression extracts the variable IDs from the files found in the data folder: 
+  ## NB! This has to come before the subsequent expressions to avoid runing code several times.
+  updatevarids <- reactive({
+    print('reactive - updatevarids()')
+    fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+    fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
+    #print(fnames); print(src); print(input$src)
+    fnames <- fnames[grep(src[match(input$src,src)],fnames)]
+    varids <- substr(fnames,6,nchar(fnames))
+    varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
+    names(varids) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
+    return(varids)
+  })
   
   ## The following reactive expressions get updated file information and metadata
   updatefilenames <- reactive({
@@ -207,9 +222,13 @@ server <- function(input, output, session) {
     return(fnames)
   })
   
+  ## The following expression utdaptes file names in the list of available names, given the region.
   updatefile <- reactive({
     print('reactive - updatefile()')
     fnames <- updatefilenames()
+    ## The climate indicators (files) are not listed in the same order since the
+    ## list is 'translated' into a more reader-friendly list
+    varids <- updatevarids()
     ii <- as.numeric(input$ci)
     ## If the climate index is not updated, try to chose the right climate index
     if (ii > length(fnames)) {
@@ -218,21 +237,8 @@ server <- function(input, output, session) {
       ii <- (1:length(varids))[is.element(varids,'precip')]
     }
     if (!is.finite(ii)) ii <- 1
-    print(paste('Selected file number',input$ci,': ',fnames[ii]))
+    print(paste('Selected file number',ii,': ',fnames[ii]))
     return(fnames[ii])
-  })
-  
-  
-  updatevarids <- reactive({
-    print('reactive - updatevarids()')
-    fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
-    fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
-    #print(fnames); print(src); print(input$src)
-    fnames <- fnames[grep(src[match(input$src,src)],fnames)]
-    varids <- substr(fnames,6,nchar(fnames))
-    varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-    names(varids) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
-    return(varids)
   })
   
   getstid <- reactive({
@@ -283,26 +289,59 @@ server <- function(input, output, session) {
     return(y)
   })
   
+  
+  
   updatetimeseries <- reactive({
     y <- updatestation()
+    x0 <- as.numeric(input$x0)
+    ## If anomaly
+    if (input$aspect=='anomaly') y <- anomaly(y)
+    if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
+    
+    ## If the data is precipitation
     if (is.precip(y)) {
       if (input$aspect=='wetmean') FUN<-'wetmean' else
         if (input$aspect=='wetfreq') FUN<-'wetfreq' else
-          #if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'sum'
           if (input$aspect=="Number_of_days") {
-            y <- test.rainequation(y,x0=input$x0,plot=FALSE)
+            y <- test.rainequation(y,x0=x0,plot=FALSE)
             return(y)
           } else FUN<- 'sum'
-    } else if (input$aspect=="Number_of_days") FUN<-'count' else FUN<-'mean'
+    } else if ((input$aspect=="Number_of_days") | (input$aspect=="Days_above_normal")) {
+      if (input$aspect=="Days_above_normal") {
+        x0 <- 0
+        y <- anomaly(y)
+      }
+      print('Number of days and not precipitation')
+      meanx <- switch(input$tscale,
+                      'month'=as.monthly(y,FUN='mean',nmin=25),
+                      'season'=as.4seasons(y,FUN='mean',nmin=80),
+                      'year'=as.annual(y,FUN='mean',nmin=300))
+      sdx <- switch(input$tscale,
+                    'month'=as.monthly(y,FUN='sd',nmin=25),
+                    'season'=as.4seasons(y,FUN='sd',nmin=80),
+                    'year'=as.annual(y,FUN='sd',nmin=300))
+      y <- switch(input$tscale,
+                  'month'=as.monthly(y,FUN='count',threshold=x0,nmin=25),
+                  'season'=as.4seasons(y,FUN='count',threshold=x0,nmin=80),
+                  'year'=as.annual(y,FUN='count',threshold=x0,nmin=300))
+      nds <- switch(input$tscale,
+                   'month'=30,
+                   'season'=90,
+                   'year'=365.25)
+      print('Probability')
+      pr <- 1 - pnorm(x0,mean=meanx,sd=sdx)
+      return(merge(pr,y/nds))
+    } else FUN<-'mean'
     #if (is.null(FUN)) FUN='mean'
     
-    x0 <- as.numeric(input$x0)
+    
     
     ## Time series
     if ( (input$tscale != 'day') & (input$timespace != 'Data_matrix') ) {
       print(paste('Use',FUN,'to aggregate the time series. input$tscale=',input$tscale))
       print(c(aspects,input$aspect)); print(x0); print(esd::unit(y))
     }
+    
     
     if (input$timespace != 'Data_matrix') { 
       if (FUN != 'count')  
@@ -316,8 +355,6 @@ server <- function(input, output, session) {
     }
     #if (is.T(y)) browser()
     
-    if (input$aspect=='anomaly') y <- anomaly(y)
-    if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
     if ( (input$aspect=='wetfreq') & (input$tscale != 'day') ) {
       y <- 100*y
       attr(y,'unit') <- '%'
@@ -332,11 +369,12 @@ server <- function(input, output, session) {
   })
   
   
+  
   ## The following are more general ractive expressions
   zoom <- reactive({
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=4,
-                        'INAM'=5,'CLARIS'=5)
+                        'metnod'=6,'ecad'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,'Africa'=3,'USA'=3,'Australia'=4,
+                        'INAM'=6,'CLARIS'=6)
     return(zoomscale)
   })
   
@@ -346,19 +384,21 @@ server <- function(input, output, session) {
     
     ## Get summary data from the netCDF file
     Y <-updatemetadata()  
+    x0 <- as.numeric(input$x0)
     #print(summary(Y))
     showseason <- switch(input$season,
                          'all'='','DJF'='_DJF','MAM'='_MAM','JJA'='_JJA','SON'='_SON')
     print(paste('Y$',input$statistic,showseason,sep=''))
     if (tolower(input$statistic)=='10.year.return.value') Z <- -Y$wetmean*log(1/(Y$wetfreq*36.525))*1.4 - 3.82 else 
       if ( (tolower(input$statistic)!='number_of_days') &
+           (tolower(input$statistic)!='days_above_normal') &
            (tolower(input$statistic)!='specific_day') ) {
         #print('Get the summary statistics from the netCDF file'); print(tolower(input$statistic))
         Z <- eval(parse(text=paste('Y$',input$statistic,showseason,sep=''))) 
       } else {
         if (tolower(input$statistic)=='number_of_days') {
           print('Number_of_days')
-          x0 <- as.numeric(input$x0)
+          
           print(paste('threshold x0=',x0))
           if (!is.null(Y$wetfreq)) Z <- switch(input$season,
                                                'all'=3.6525*Y$wetfreq*exp(-x0/Y$wetmean),
@@ -399,7 +439,7 @@ server <- function(input, output, session) {
   
   legendtitle <- reactive({
     Y <- updatemetadata()
-    #print('legendtitle'); print(stattype); print(input$statistic); print(input$lingo)
+    print('legendtitle'); print(stattype); print(input$statistic); print(input$lingo)
     #title <- type2name(input$statistic,input$lingo,stattype)
     #if ( (length(grep(attr(Y,'unit')$value,title))==0) & (length(grep('%',title))==0) )
     #  title <- paste(title,' (',attr(Y,'unit')$value,')',sep='')
@@ -413,10 +453,13 @@ server <- function(input, output, session) {
     if ( (length(grep(tolower('first.year'),tolower(input$statistic)))>0) | 
          (length(grep(tolower('last.year'),tolower(input$statistic)))>0) ) title <- yr[as.numeric(input$lingo)]
     if (length(grep(tolower('valid'),tolower(input$statistic)))>0) title <- yrs[as.numeric(input$lingo)]
-    if (length(grep(tolower('lastrains'),tolower(input$statistic)))>0) title <- days[as.numeric(input$lingo)]
+    if (sum(is.element(tolower(input$statistic), c('lastrains','mean_wetdur','mean_drydur','number_of_days')))>0) 
+          title <- days[as.numeric(input$lingo)]
     if (input$statistic=='Specific_day') title=paste(input$it,' (',attr(Y,'unit'),')',sep='')
     if ( (length(grep(tolower('mean'),tolower(input$statistic)))>0) & 
          (length(grep(tolower('day'),tolower(title)))>0) ) title <- sub('/day','',title)
+    if (length(grep(tolower('sigma2'),tolower(input$statistic)))>0) title <- 'mm^2'
+    print(paste('legend title',title))
     return(title)
   })
   
@@ -475,14 +518,17 @@ server <- function(input, output, session) {
     lon.highlight <- Y$longitude[filter][highlight]
     lat.highlight <- Y$latitude[filter][highlight]
     if (tolower(input$highlight) != "none") {
-      print('Highlight');print(statistic[highlight]); print(lon.highlight); print(lat.highlight); print(input$ci); print(input$highlight)
+      print(paste('Highlight',input$highlight))
+      print(statistic[highlight]); print(lon.highlight); print(lat.highlight)
     }
     if (sum(filter)==0) {
       print(paste(input$ci,esd::varid(y),min(statistic),max(statistic),input$statisticrange[1],input$statisticrange[2]))
       filter <- rep(TRUE,length(statistic))  
     }
     if (sum(is.element(vids[as.numeric(input$ci)],c('precip','sd')))>0) reverse <- TRUE else reverse <- FALSE
-    if (input$statistic=="lastrains") reverse <- FALSE
+    if ((input$statistic=="lastrains") | (input$statistic=="mean_drydur")) reverse <- FALSE
+    if((input$statistic=="trend_wetfreq") | (input$statistic=="trend_wetmean") |
+        (input$statistic=="wetfreq") | (input$statistic=="wetmean")) reverse <- TRUE
     #print(paste('Reverse palette =',reverse)); print(summary(statistic))
     #print(c(sum(filter),length(filter),length(statistic)))
     pal <- colorBin(colscal(col = 't2m',n=10),
@@ -503,25 +549,30 @@ server <- function(input, output, session) {
     leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
                        lat = Y$latitude[filter],fill = TRUE, # latitude
-                       label = as.character(round(statistic[filter],digits = 2)),
+                       label = paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
                        radius =radius,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
-      addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
+      addCircleMarkers(lng = Y$longitude[is], lat = Y$latitude[is],fill=FALSE,
                        label=as.character(1:10),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
-                       radius=5,stroke=TRUE, weight=5, color='black',
+                       radius=6,stroke=TRUE, weight=3, color='green',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
+      addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
+                       label=paste0('#',1:10,': ',Y$location[highlight],' - ',as.character(round(statistic[highlight],digits = 2))),
+                       labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
+                       radius=6,stroke=TRUE, weight=3, color='black',
+                       layerId = Y$station.id[filter][highlight],
+                       fillOpacity = 0.1,fillColor=rep("black",10)) %>%
       addLegend("topright", pal=pal, values=round(statistic[filter], digits = 2), 
                 title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
       addProviderTiles(providers$Esri.WorldStreetMap,
                        #addProviderTiles(providers$Stamen.TonerLite,
-                       options = providerTileOptions(noWrap = FALSE)
-      ) %>% 
+                       options = providerTileOptions(noWrap = FALSE)) %>% 
       setView(lat=Y$latitude[is],lng = Y$longitude[is], zoom = zoom())
   })
   
@@ -553,13 +604,15 @@ server <- function(input, output, session) {
                  detail = 'This may take a while...', value = 0,
                  { for (i in 1:15) {
                    incProgress(1/15)
-                   Sys.sleep(0.05)}
+                   Sys.sleep(0.07)}
                  })
     
     print('The timeseries is being rendered')
-    if ( (!is.null(dim(y))) & (input$aspect=="Number_of_days") ) {
-      timeseries <- data.frame(date=index(y),pr=365.25*coredata(y[,1]),obs= 365.25*coredata(y[,2]),
-                               trend=coredata(trend(365.25*y[,2])))
+    if ( (!is.null(dim(y))) & ((input$aspect=="Number_of_days")  | (input$aspect=="Days_above_normal"))  ){
+      ndps <- switch(input$tscale,
+                     'year'=365.25,"day"=1,"month"=30,"season"=90)
+      timeseries <- data.frame(date=index(y),pr=ndps*coredata(y[,1]),obs= ndps*coredata(y[,2]),
+                               trend=coredata(trend(ndps*y[,2])))
       print(summary(timeseries))
       TS <- plot_ly(timeseries,x=~date,y=~obs,type = 'scatter',mode='lines',name='observed',color=rgb(0,0,0))
       TS <- TS %>% add_trace(y=~trend,name='trend',color=rgb(1,0,0)) %>% 
@@ -682,33 +735,28 @@ server <- function(input, output, session) {
       Col <- rep('rgba(255, 182, 193, .9)',n) 
       lcol <- 'rgba(152, 0, 0, .8)'
       lwidth <- 2
-      } else {
-        Col <-Y[[input$xy_col]]
-        lcol <- 'rgba(150, 150, 150, .8)'
-        lwidth <- 1
-      }
+    } else {
+      Col <-Y[[input$xy_col]]
+      lcol <- 'rgba(150, 150, 150, .8)'
+      lwidth <- 1
+    }
     if (input$xy_size=="Uniform") size <- rep(10,n) else {
       z <- Y[[input$xy_size]]
       size <- 30*sqrt( (z - min(z,na.rm=TRUE))/(max(z,na.rm=TRUE) - min(z,na.rm=TRUE)) )
     }
     Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col, 
-                    size=size,name=paste(Y$location,Y$station.id))
+                    size=size,name=as.character(paste(Y$location,Y$station.id)),stringsAsFactors = FALSE)
     size <- size[is.finite(Z[,1]) & is.finite(Z[,2])]
     Z <- Z[is.finite(Z[,1]) & is.finite(Z[,2]),]
     print(summary(Z))
     fit <- lm(y ~ x, data=Z)
     print(summary(fit))
     
-    p <- plot_ly(data = Z, x = ~x, y = ~y, color= ~Col,name=~name,showlegend = FALSE,
+    p <- plot_ly(data = Z, x = ~x, y = ~y, color= ~Col, text=~name, showlegend = FALSE,
                  marker = list(size=size,line = list(color = lcol, width = lwidth))) %>%
       layout(title = 'x/y',
-<<<<<<< HEAD
              yaxis = list(title=input$y_variable, zeroline = TRUE),
-             xaxis = list(title=input$x_variable,zeroline = TRUE))
-=======
-             yaxis = list(title=input$x_variable, zeroline = TRUE),
-             xaxis = list(title=input$y_variable,zeroline = TRUE))
->>>>>>> c35277c4293da38027cd8d4aaf5f264538939a94
+             xaxis = list(title=input$x_variable, zeroline = TRUE))
     #add_lines(p,fit)
   })
   
@@ -722,6 +770,8 @@ server <- function(input, output, session) {
     tstitle[as.numeric(input$lingo)]})
   output$htitle <- renderText({
     htitle[as.numeric(input$lingo)]})
+  output$etitle <- renderText({
+    etitle[as.numeric(input$lingo)]})
   output$cftitle <- renderText({
     cftitle[as.numeric(input$lingo)]})
   output$timespacelabel <- renderText({
@@ -784,6 +834,7 @@ server <- function(input, output, session) {
     } else {
       hsum <- paste(attr(y,'longname'),'period=',paste(range(index(y)),collapse='-'))
     }
+    print(input$timespace); print(timespace); print(match(input$timespace,timespace))
     hdescr <- timespacedescr[as.numeric(input$lingo),match(input$timespace,timespace)]
     if (input$timespace != 'Histogram_map') hdescr <- paste(hdescr,esd::loc(y),'in',esd::cntr(y)[1])
     if (input$timespace == 'Histogram_location') {

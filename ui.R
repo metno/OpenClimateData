@@ -3,9 +3,10 @@
 ### Rasmus Benestad
 ###----------------------------------
 
-titlePanel("title panel")
+titlePanel("OpenClimateDataPrototype")
 
 ui <- dashboardPage(
+  title="OpenClimateDataPrototype",
   skin="green",
   dashboardHeader(title = textOutput("maintitle")),
   dashboardSidebar(
@@ -60,7 +61,7 @@ ui <- dashboardPage(
     
     fluidPage( 
       tabsetPanel(
-        tabPanel('Map of elements',fluidPage(
+        tabPanel(title=uiOutput("maptitle"),fluidPage(
           #title=textOutput("maptitle"),status = "success",collapsed = FALSE, 
           #collapsible = TRUE, width="100%", solidHeader = TRUE, 
           fluidRow(width="100%",
@@ -79,7 +80,7 @@ ui <- dashboardPage(
                    column(6, sliderInput("rad", "Symbol size:", min = 1, max=10, value = 4,sep=''))))
         )
         ),
-        tabPanel('Past Weather',fluidPage(
+        tabPanel(title=uiOutput("tstitle"),fluidPage(
           #box(title=textOutput("tstitle"),status = "success",collapsed = TRUE,
           #    collapsible = TRUE, width="100%", solidHeader = TRUE,
           fluidRow(plotlyOutput("plotstation", height = 500,width = '100%')),
@@ -94,7 +95,7 @@ ui <- dashboardPage(
                    #                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))
           ))
         ),
-        tabPanel('Statistics & climate',fluidPage(
+        tabPanel(title=uiOutput("htitle"),fluidPage(
           #box(title=textOutput("htitle"),status = "success",collapsed = TRUE,
           #    collapsible = TRUE, width="100%", solidHeader = TRUE,
           fluidRow(plotlyOutput("histstation", height = 500,width = '100%')),
@@ -106,7 +107,7 @@ ui <- dashboardPage(
                                                inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL))
           ))
         ),
-        tabPanel('Explore',fluidPage(
+        tabPanel(title=uiOutput("etitle"),fluidPage(
           fluidRow(plotlyOutput("scatterplot", height = 500,width = '100%')),
           fluidRow(column(3,selectInput("x_variable", "X", choices= stattype,selected = "mean")),
                    column(3,selectInput("y_variable", "Y", choices= stattype,selected = "altitude")),
@@ -114,7 +115,7 @@ ui <- dashboardPage(
                    column(3,selectInput("xy_size", "Marker size", choices= c('Uniform',stattype),selected = "Uniform"))
           ))
         ),
-        tabPanel('About/Disclaimer',fluidPage(
+        tabPanel(title=uiOutput("cftitle"),fluidPage(
           #box(title=textOutput("cftitle"),status = "success",collapsed = TRUE, 
           #    collapsible = TRUE, width="100%", solidHeader = TRUE, 
           tags$div(class="header", checked=NA,
