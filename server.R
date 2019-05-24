@@ -48,6 +48,22 @@ server <- function(input, output, session) {
   
   ## Events ---------------------------------------------------------------------------------------------------------
   ## Used to perform an action in response to an event. 
+  ##When new data source/region is selected
+  observeEvent(input$src, {
+    ## Get the file names of the data
+    print(paste("observeEvent(input$src=",input$src,') - update {Y, varids, statistics}:'))
+    Y <- updatemetadata()
+    varids <- updatevarids()
+    statistic <- vals()
+    ci <- updateci()
+    #print('varids:');print(varids); print('ci:');print(ci)
+    ## For new data source reset the initial choice to precipitation
+    prec <- ci[is.element(varids,'precip')]
+    if (is.na(prec)) prec <- 1   ## "Safety option"
+    filter <- rep(TRUE,length(statistic))
+    print(paste("ci=",paste(names(ci),'[',ci,']',sep='',collapse=", "),"prec=",prec))
+    updateSelectInput(session=session,inputId="ci",choices=ci,selected=prec)
+  })
   
   ## Click on the map marker - this updates the station location in the left panel
   observeEvent(input$map_marker_click,{
@@ -64,23 +80,6 @@ server <- function(input, output, session) {
     print('---click---')
   })
   
-  ##When new data source/region is selected
-  ## REB: the following chunck seems to be unnecessary
-  # observeEvent(input$src, {
-  #   ## Get the file names of the data
-  #   print(paste("observeEvent(input$src=",input$src,') - update {Y, varids, statistics}:'))
-  #   Y <- updatemetadata()
-  #   varids <- updatevarids()
-  #   statistic <- vals()
-  #   ci <- updateci()
-  #   #print('varids:');print(varids); print('ci:');print(ci)
-  #   ## For new data source reset the initial choice to precipitation
-  #   prec <- ci[is.element(varids,'precip')]
-  #   if (is.na(prec)) prec <- 1   ## "Safety option"
-  #   filter <- rep(TRUE,length(statistic))
-  #   print(paste("ci=",paste(names(ci),'[',ci,']',sep='',collapse=", "),"prec=",prec))
-  #   updateSelectInput(session=session,inputId="ci",choices=ci,selected=prec)
-  # })
   
   ## Change language in some of the roll-down menues
   observeEvent(input$lingo, {
@@ -114,7 +113,6 @@ server <- function(input, output, session) {
       updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
       print('---tscale---')
   })
-  
   
   ## Observe ---------------------------------------------------------------------------------------------------------
   ## Reactive expressions that read reactive values and call reactive expressions, and will automatically 
@@ -196,6 +194,8 @@ server <- function(input, output, session) {
                       selected='All')
   })
   
+  
+  
   ## Reactive expressions to update information -------------------------------------------------------------- 
   
   ## The following expression extracts the variable IDs from the files found in the data folder: 
@@ -226,6 +226,9 @@ server <- function(input, output, session) {
   updatefile <- reactive({
     print('reactive - updatefile()')
     fnames <- updatefilenames()
+    ## The climate indicators (files) are not listed in the same order since the
+    ## list is 'translated' into a more reader-friendly list
+    varids <- updatevarids()
     ii <- as.numeric(input$ci)
     ## If the climate index is not updated, try to chose the right climate index
     if (ii > length(fnames)) {
@@ -234,7 +237,7 @@ server <- function(input, output, session) {
       ii <- (1:length(varids))[is.element(varids,'precip')]
     }
     if (!is.finite(ii)) ii <- 1
-    print(paste('Selected file number',input$ci,': ',fnames[ii]))
+    print(paste('Selected file number',ii,': ',fnames[ii]))
     return(fnames[ii])
   })
   
@@ -285,6 +288,8 @@ server <- function(input, output, session) {
                       min=min(year(y)),max=max(year(y)))
     return(y)
   })
+  
+  
   
   updatetimeseries <- reactive({
     y <- updatestation()
@@ -364,11 +369,12 @@ server <- function(input, output, session) {
   })
   
   
+  
   ## The following are more general ractive expressions
   zoom <- reactive({
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'Asia'=3,'Pacific'=3,'LatinAmerica'=3,'Africa'=3,'USA'=3,'Australia'=4,
-                        'INAM'=5,'CLARIS'=5)
+                        'metnod'=6,'ecad'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,'Africa'=3,'USA'=3,'Australia'=4,
+                        'INAM'=6,'CLARIS'=6)
     return(zoomscale)
   })
   
@@ -543,7 +549,7 @@ server <- function(input, output, session) {
     leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
                        lat = Y$latitude[filter],fill = TRUE, # latitude
-                       label = paste(Y$location,as.character(round(statistic,digits = 2))),
+                       label = paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
                        radius =radius,stroke=TRUE,weight = 1, color='black',

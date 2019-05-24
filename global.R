@@ -145,7 +145,7 @@ getstattype <- function(fname,lingo=NULL) {
 }
 
 ## Plain text description of the statistics presented on the climate indicators for ordinary people.
-vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
+vari2name <- function(x,vars=c('precip','t2m','tmax','tmin',
                                'cc','ss','pp','fg','fx','sd','dd'),
                       names=c('Precipitation','Daily mean temperature',
                               'Daily max temperature','Daily min temperature',
