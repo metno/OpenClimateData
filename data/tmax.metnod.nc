@@ -1,1 +1,0 @@
-/home/rasmusb/storeB/station.metnod/tmax.metnod.nc
