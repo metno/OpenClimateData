@@ -21,7 +21,7 @@ server <- function(input, output, session) {
     if (length(stid)>1) stid <- stid[1]
     if (length(lat)>1) lat <- lat[1]
     if (length(lng)>1) lng <- lng[1]
-
+    
     print(paste('showMetaPopup() ===',stid,round(lat,2),round(lng,2),ci))
     Y <- updatemetadata()
     statistic <- vals()
@@ -41,7 +41,7 @@ server <- function(input, output, session) {
                      sprintf("%s", value),
                      sprintf("Interval: %s", paste(Y$first.year[Y$station.id == stid],Y$last.year[Y$station.id == stid],sep = '-'))
     )
-
+    
     mapid <- mapid %>% addPopups(lng, lat, content,layerId = stid)
     return(mapid)
   }
@@ -73,7 +73,7 @@ server <- function(input, output, session) {
     event <- input$map_marker_click
     #print(paste('Updated ',input$location)); print(event$id)
     selected <- which(Y$station.id == event$id)
-
+    
     #if (input$exclude== 'Selected') filter[selected] <- FALSE
     updateSelectInput(session,inputId = 'location',label=lab.location[as.numeric(input$lingo)],
                       choices=Y$location,selected = Y$location[selected])
@@ -88,18 +88,18 @@ server <- function(input, output, session) {
     #print(varids)
     names(tscales) <- timescales[as.numeric(input$lingo),]
     updateSelectInput(session=session,inputId="tscale",choices=tscales,selected=input$tscale)
-
+    
     ci <- updateci()
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=input$ci)
-
+    
     names(src) <- regions[as.numeric(input$lingo),match(src,source.regions)]
     #print(src)
     updateSelectInput(session=session,inputId="src",choices=src,selected=input$src)
-
+    
     names(stattype) <- type2name(stattype,input$lingo,types)
     #print(stattype)
     updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
-
+    
     names(timespace) <- timespacenames[as.numeric(input$lingo),]
     updateSelectInput(session=session,inputId="timespace",choices=timespace,selected=input$timespace)
     print('---lingo---')
@@ -156,9 +156,9 @@ server <- function(input, output, session) {
       start2 <- round(quantile(abs(statistic),0.975,na.rm=TRUE),digits)
       start1 <- -start2
     }
-
+    
     step <- max(c(min(c(1,round((start2 - start1)/100,1))),0.1))
-
+    
     #print(statistic)
     print(paste('Slider max & min= [',statisticmin,', ',statisticmax,'] n=',length(statistic),
                 ' default:',start1,start2,' input$ci=',input$ci,sep=''))
@@ -325,9 +325,9 @@ server <- function(input, output, session) {
                   'season'=as.4seasons(y,FUN='count',threshold=x0,nmin=80),
                   'year'=as.annual(y,FUN='count',threshold=x0,nmin=300))
       nds <- switch(input$tscale,
-                   'month'=30,
-                   'season'=90,
-                   'year'=365.25)
+                    'month'=30,
+                    'season'=90,
+                    'year'=365.25)
       print('Probability')
       pr <- 1 - pnorm(x0,mean=meanx,sd=sdx)
       return(merge(pr,y/nds))
@@ -416,13 +416,17 @@ server <- function(input, output, session) {
         } else {
           ## Get a specific date it
           it <- input$it
+          ## Make sure the date is within the range of valid dates in the netCDF file 
+          print("reactive vals - specific date"); print(it); print(attr(Y,'period'))
+          if (as.Date(it) < as.Date(attr(Y,'period')[1])) it <- attr(Y,'period')[1]
+          if (as.Date(it) > as.Date(attr(Y,'period')[2])) it <- attr(Y,'period')[2]
           print("Read a specific date from the netCDF file"); print(it); print(updatefile())
           x <- retrieve.station(updatefile(),it=it,verbose=verbose)
           Z <- c(coredata(x))
           dim(Z) <- c(length(Z),1)
           ## The stations are sorted according to alphabetic order
           Z <- Z[match(Y$station.id,stid(x))]
-          print(rbind(stid(x),Y$station.id))
+          print(cbind(stid(x),Y$station.id,stid(x)[match(Y$station.id,stid(x))])[1:10,])
           print(summary(Z))
           print('...')
         }
@@ -454,7 +458,7 @@ server <- function(input, output, session) {
          (length(grep(tolower('last.year'),tolower(input$statistic)))>0) ) title <- yr[as.numeric(input$lingo)]
     if (length(grep(tolower('valid'),tolower(input$statistic)))>0) title <- yrs[as.numeric(input$lingo)]
     if (sum(is.element(tolower(input$statistic), c('lastrains','mean_wetdur','mean_drydur','number_of_days')))>0) 
-          title <- days[as.numeric(input$lingo)]
+      title <- days[as.numeric(input$lingo)]
     if (input$statistic=='Specific_day') title=paste(input$it,' (',attr(Y,'unit'),')',sep='')
     if ( (length(grep(tolower('mean'),tolower(input$statistic)))>0) & 
          (length(grep(tolower('day'),tolower(title)))>0) ) title <- sub('/day','',title)
@@ -506,20 +510,39 @@ server <- function(input, output, session) {
     filter[statistic > input$statisticrange[2]] <- FALSE
     
     highlight <- NULL
-    if (tolower(input$highlight) == "top 10") highlight <- order(statistic[filter],decreasing=TRUE)[1:10] else 
-      if (tolower(input$highlight) == "low 10") highlight <- order(statistic[filter],decreasing=FALSE)[1:10] else 
-        if (tolower(input$highlight) == "New records") {
-          if ( (!is-null(Y$last_element_highest)) & (!is-null(Y$last_element_lowest)) ) 
-            highlight <- Y$last_element_highest > 0 & Y$last_element_lowest > 0 else
-              if (!is-null(Y$last_element_highest)) highlight <- Y$last_element_highest > 0 else
-                highlight <- rep(FALSE,length(statistic))
-        } 
+    lhighlight <- paste0('#',1:10)
+    if (tolower(input$highlight) == "top 10") 
+      highlight <- order(statistic[filter],decreasing=TRUE)[1:10] else 
+        if (tolower(input$highlight) == "low 10") 
+          highlight <- order(statistic[filter],decreasing=FALSE)[1:10] else 
+            if (tolower(input$highlight) == "new records") {
+              print('--- Higlight new records ---')
+                 ## For a specific day, check against the maximum or minimum
+                 if (tolower(input$statistic)!='specific_day') {
+                   x <- retrieve.station(updatefile(),it=attr(Y,'period')[2],verbose=verbose)
+                   Z <- c(coredata(x))
+                   dim(Z) <- c(length(Z),1)
+                   ## The stations are sorted according to alphabetic order
+                   Z <- Z[match(Y$station.id,stid(x))]
+                 } else Z <- statistic
+                 print(paste('Minimum?',is.null(Y$min)))
+                 if (!is.null(Y$wetmean)) 
+                   highlight <- (Z[filter] - Y$max[filter] > -0.001) & is.finite(Z[filter]) else 
+                   highlight <- ((Z[filter] - Y$max[filter] > -0.001) | 
+                                 (Z[filter] - Y$min[filter] < 0.001)) & is.finite(Z[filter])
+                   print('RECORDS?')
+                   highlight[is.na(highlight)] <- FALSE
+                   print(paste('Number of records on',input$it,'is',sum(highlight,na.rm=TRUE)))
+                   print(paste(Y$location[filter][highlight],Z[filter][highlight]))
+                   print(table(highlight)); print(table(filter))
+                   lhighlight <- rep('Record',sum(highlight,nn.rm=TRUE))
+            } 
     
     lon.highlight <- Y$longitude[filter][highlight]
     lat.highlight <- Y$latitude[filter][highlight]
     if (tolower(input$highlight) != "none") {
       print(paste('Highlight',input$highlight))
-      print(statistic[highlight]); print(lon.highlight); print(lat.highlight)
+      print(statistic[filter][highlight]); print(lon.highlight); print(lat.highlight)
     }
     if (sum(filter)==0) {
       print(paste(input$ci,esd::varid(y),min(statistic),max(statistic),input$statisticrange[1],input$statisticrange[2]))
@@ -528,7 +551,7 @@ server <- function(input, output, session) {
     if (sum(is.element(vids[as.numeric(input$ci)],c('precip','sd')))>0) reverse <- TRUE else reverse <- FALSE
     if ((input$statistic=="lastrains") | (input$statistic=="mean_drydur")) reverse <- FALSE
     if((input$statistic=="trend_wetfreq") | (input$statistic=="trend_wetmean") |
-        (input$statistic=="wetfreq") | (input$statistic=="wetmean")) reverse <- TRUE
+       (input$statistic=="wetfreq") | (input$statistic=="wetmean")) reverse <- TRUE
     #print(paste('Reverse palette =',reverse)); print(summary(statistic))
     #print(c(sum(filter),length(filter),length(statistic)))
     pal <- colorBin(colscal(col = 't2m',n=10),
@@ -556,18 +579,18 @@ server <- function(input, output, session) {
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
       addCircleMarkers(lng = Y$longitude[is], lat = Y$latitude[is],fill=FALSE,
-                       label=as.character(1:10),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        radius=6,stroke=TRUE, weight=3, color='green',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
       addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
-                       label=paste0('#',1:10,': ',Y$location[highlight],' - ',as.character(round(statistic[highlight],digits = 2))),
+                       label=paste0(lhighlight,': ',Y$location[highlight],' - ',
+                                    as.character(round(statistic[highlight],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        radius=6,stroke=TRUE, weight=3, color='black',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.1,fillColor=rep("black",10)) %>%
-      addLegend("topright", pal=pal, values=round(statistic[filter], digits = 2), 
+      addLegend("bottomright", pal=pal, values=round(statistic[filter], digits = 2), 
                 title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
       addProviderTiles(providers$Esri.WorldStreetMap,
@@ -797,7 +820,11 @@ server <- function(input, output, session) {
   output$highlightTSlabel <- renderText({
     lab.highlight[as.numeric(input$lingo)]})
   output$daylabel <- renderText({
-    lab.speficicday[as.numeric(input$lingo)]})
+    lab.specificday[as.numeric(input$lingo)]})
+  output$enddate <- renderText({
+    Y <- updatemetadata()
+    print('output$enddate'); print(attr(Y,'period'))
+    attr(Y,'period')[2]})
   output$excludelabel <- renderText({
     lab.exclude[as.numeric(input$lingo)]})
   output$seasonTSlabel <- renderText({
@@ -806,7 +833,7 @@ server <- function(input, output, session) {
     paste(descrlab[as.numeric(input$lingo)],explainmapstatistic(input$statistic,input$lingo,types))})
   output$datainterval <- renderText({
     Y <- updatemetadata()
-    #print(paste('Source',input$src))
+    #print('output$datainterval'); print(paste('Source',input$src))
     paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
           attr(Y,'period')[1],' - ',attr(Y,'period')[2])})
   output$cntr <- renderText({

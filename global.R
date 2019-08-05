@@ -324,7 +324,7 @@ varnames=rbind(c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstem
 timescales <- rbind(c('Dag','Måned','Sesong','År'),
                     c('Dag','Måned','Sesong','År'),
                     c('Day','Month','Season','Year'))
-lab.speficicday <- c('Utvalgt dag','Utvald dag','Specific day')
+lab.specificday <- c('Utvalgt dag','Utvald dag','Specific day')
 showhideyears <- c('Enkelte år','Enkelte år','Individual years')
 showyears <- rbind(c('Vis','Skjul'), c('Vis','Skjul'), c('Show','Hide'))
 aspects <- aspectsP

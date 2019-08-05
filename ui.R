@@ -72,7 +72,8 @@ ui <- dashboardPage(
                    column(2, selectInput("highlight", textOutput("highlightlabel"), choices= highlighting)),
                    
                    column(3, conditionalPanel(condition="input.statistic == 'Specific_day'",
-                                              dateInput("it",textOutput("daylabel"), value=attr(Y,'period')[2]))),
+                                              dateInput("it",textOutput("daylabel"), 
+                                                        value=attr(Y,'period')[2]))),
                    fluidRow(leafletOutput("map",height = 700)),
                    fluidRow(box(tags$h4(textOutput('mapdescription')),width=12),
                    column(6, sliderInput("statisticrange", "Range:", min = statisticmin, max=statisticmax, 
