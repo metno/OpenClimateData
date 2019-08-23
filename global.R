@@ -22,6 +22,7 @@ library(RColorBrewer)
 
 ## Organises the names of the statistic presented in the map and their appearances in the menu. Supports multiple languages
 type2name <-function(stattype,lingo,types) {
+  print('<A: type2name')
   names <- rbind(
     c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
       "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
@@ -51,6 +52,7 @@ type2name <-function(stattype,lingo,types) {
 }
 
 explainmapstatistic <- function(stattype,lingo,types) {
+  print('<B: explainmapstatistic')
   descriptions <- rbind(
     c("Høyde over havet i meter (metadata)","Året da målingene startet (metadata)",
       "Hvor mange dager det har gått uten nedbør",
@@ -109,7 +111,7 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Mean duration of a dry spell (days)","Mean duration of a wet spell (days)",
       "Day with measurements above the normal")
   )
-  print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
+  #print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
   descr <- description[match(tolower(stattype),tolower(types))]
   return(descr)
@@ -118,9 +120,9 @@ explainmapstatistic <- function(stattype,lingo,types) {
 
 ## Extract the avaiable statistics to present on the map based on the aggregated statistics stored in the netCDF files
 getstattype <- function(fname,lingo=NULL) {
-  print(paste('getstattype',fname,lingo))
+  print(paste('<C: getstattype',fname,lingo))
   meta <- retrieve.stationsummary(fname)
-  print(names(meta))
+  #print(names(meta))
   doubleuscrs <- unlist(lapply(gregexpr('_',names(meta)),length)) > 1
   names(meta)[doubleuscrs] <- sub('_','-',names(meta)[doubleuscrs])
   names(meta) <- paste(names(meta),'_',sep='')
@@ -156,6 +158,7 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
                               'Daily max temperature','Daily min temperature',
                               'Cloud cover','Sunshine','Pressure','Wind speed',
                               'Wind gust','Snow depth','Wind direction'),nc=3) {
+  print('<C: vari2name')
   y <- x
   if (length(vars) != length(names)) stop("vars have different length to names in 'variname'")
   for (i in 1:length(x)) {
