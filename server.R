@@ -554,7 +554,7 @@ server <- function(input, output, session) {
        (input$statistic=="wetfreq") | (input$statistic=="wetmean")) reverse <- TRUE
     #print(paste('Reverse palette =',reverse)); print(summary(statistic))
     #print(c(sum(filter),length(filter),length(statistic)))
-    pal <- colorBin(colscal(col = 't2m',n=10),
+    pal <- colorBin(colscal(pal = 't2m',n=10),
                     seq(input$statisticrange[1],input$statisticrange[2],length=10),bins = 10,pretty = TRUE,reverse=reverse)    
     
     is <- which(tolower(Y$location) == tolower(input$location))[1]
