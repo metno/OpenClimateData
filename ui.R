@@ -78,7 +78,7 @@ ui <- dashboardPage(
                    fluidRow(box(tags$h4(textOutput('mapdescription')),width=12),
                    column(8, sliderInput("statisticrange", "Range:", min = statisticmin, max=statisticmax, 
                                          value = c(statisticmin,statisticmax),sep='',round=TRUE)),
-                   column(4, sliderInput("rad", "Symbol size:", min = 1, max=10, value = 4,sep=''))))
+                   column(4, sliderInput("rad", "Symbol size:", min = 1, max=10, value = 5,sep=''))))
         )
         ),
         tabPanel(title=uiOutput("tstitle"),fluidPage(
@@ -111,9 +111,9 @@ ui <- dashboardPage(
         tabPanel(title=uiOutput("etitle"),fluidPage(
           fluidRow(plotlyOutput("scatterplot", height = 500,width = '100%')),
           fluidRow(column(3,selectInput("x_variable", "X", choices= stattype,selected = "mean")),
-                   column(3,selectInput("y_variable", "Y", choices= stattype,selected = "altitude")),
-                   column(3,selectInput("xy_col", "Colouring", choices= c('Red',stattype),selected = "None")),
-                   column(3,selectInput("xy_size", "Marker size", choices= c('Uniform',stattype),selected = "Uniform"))
+                   column(3,selectInput("y_variable", "Y", choices= stattype,selected = "trend")),
+                   column(3,selectInput("xy_col", "Colouring", choices= c('Red',stattype),selected = "altitude")),
+                   column(3,selectInput("xy_size", "Marker size", choices= c('Uniform',stattype),selected = "number.valid"))
           ))
         ),
         tabPanel(title=uiOutput("cftitle"),fluidPage(
