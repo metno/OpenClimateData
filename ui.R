@@ -15,7 +15,7 @@ ui <- dashboardPage(
     box(textOutput("datainterval"),background='black',width=12),
     selectInput("ci", "Climate Index", choices= ci, selected=ci[varids=='precip']),
     selectInput("location", textOutput("locationlabel"), choices= Y$location,
-                selected = 'Oslo - blind'),
+                selected = 'Oslo - blindern'),
     
     #tags$style(type="text/css", "#string { margine-left: 30px; margin-right: 30px; font-size: 30px;}"),
     selectInput("country", "Show", 

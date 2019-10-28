@@ -717,7 +717,9 @@ server <- function(input, output, session) {
       } else {
         y <- updatestation()
         clim <- climatology(y)
-        Z <- diagram(y,plot=FALSE)
+        if (is.precip(y)) fun <- 'sum' else fun <- 'mean'
+        if (input$timespace!='Annual_cycle_cumugram') Z <- diagram(y,plot=FALSE) else 
+                                                      Z <- attr(cumugram(y,FUN=fun,plot=FALSE),'Y')[1:365,]
         ## Check if the years of data include current year
         iyr <- is.element(colnames(Z),format(Sys.Date(),'%Y'))
         #print(paste(sum(iyr),'cases for',format(Sys.Date(),'%Y')))
@@ -740,7 +742,9 @@ server <- function(input, output, session) {
           eval(parse(text=cl))
         }
         #print(names(mac))
-        AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='grey')) %>%
+        if (input$timespace!='Annual_cycle_cumugram') 
+              AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='grey')) 
+        AC <- AC %>%
           layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
       }
     }

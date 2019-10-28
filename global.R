@@ -268,13 +268,13 @@ seaTS <- c('All year'='all','Dec-Feb'='DJF',
 ## Thesholds
 #thresholds <- seq(10,50,by=10)
 
-timespace <- c('Annual_cycle_month','Annual_cycle_day','Data_matrix',
+timespace <- c('Annual_cycle_month','Annual_cycle_day','Annual_cycle_cumugram','Data_matrix',
                'Histogram_location','Histogram_map')
-timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk','Dag og år',
+timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk','Oppsummert år','Dag og år',
                           'Stedsstatistikk','Alle stedene'),
-                        c('Månedstatistikk','Døgnstatistikk','Dag og år',
+                        c('Månedstatistikk','Døgnstatistikk','Oppsummert år','Dag og år',
                           'Stedsstatistikk','Alle stadane'),
-                        c('Monthly statistics','Daily statistics','Year and day',
+                        c('Monthly statistics','Daily statistics','Cumulated daily','Year and day',
                           'Histogram','Spatial statstics'))
 timespacedescr <- rbind(c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
                           'Dag og år','Histogram for','Statistikk for steder vist på kartet'),
@@ -341,8 +341,11 @@ names(languages) <- language.names
 ## Get the names of locations, etc.
 print('Get metadata & summary statistics')
 Y <- retrieve.stationsummary(fnames[ipre])
+print(Y$location)
+
 print('Get first station')
 y <- retrieve.station(fnames[ipre],stid=18700,verbose=verbose)
+print(loc(y))
 #y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="De bilt"],verbose=verbose)
 
 print('Get range for the sliding bar')
