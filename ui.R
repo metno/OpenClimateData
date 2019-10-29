@@ -102,7 +102,7 @@ ui <- dashboardPage(
           fluidRow(plotlyOutput("histstation", height = 500,width = '100%')),
           fluidRow(box(textOutput("hdes"),background='light-blue',width=14),
                  selectInput("timespace", textOutput("timespacelabel"), choices= timespace,selected = timespace[1]),
-                 conditionalPanel(condition="input.timespace == 'Annual_cycle_day'",
+                 conditionalPanel(condition="input.timespace == 'Annual_cycle_day' || input.timespace == 'Annual_cycle_cumugram'",
                                   radioButtons("showlegend", textOutput("yearlabel"), choices = c('Show','Hide'),
                                                selected = "Hide",
                                                inline = FALSE, width = NULL, choiceNames = NULL, choiceValues = NULL))
