@@ -557,9 +557,12 @@ server <- function(input, output, session) {
     pal <- colorBin(colscal(pal = 't2m',n=10),
                     seq(input$statisticrange[1],input$statisticrange[2],length=10),bins = 10,pretty = TRUE,reverse=reverse)    
     
-    is <- which(tolower(Y$location) == tolower(input$location))[1]
+    ## Only show good data
     good <- is.finite(Y$longitude) & is.finite(Y$latitude)
     Y <- Y[good,]; statistic <- statistic[good]; filter <- filter[good]
+    
+    ## Mark the selected location
+    is <- which(tolower(Y$location[filter]) == tolower(input$location))[1]
     if ( (length(is)==0) | is.na(is) ) is <- 1
     radius <- rep(input$rad,length(statistic[filter]))
     radius[!is.finite(statistic[filter])] <- 1
@@ -568,6 +571,8 @@ server <- function(input, output, session) {
     #             'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
     #             input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
     # print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
+    print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
+                Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is]))
     
     leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
@@ -578,10 +583,10 @@ server <- function(input, output, session) {
                        radius =radius,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
-      addCircleMarkers(lng = Y$longitude[is], lat = Y$latitude[is],fill=FALSE,
+      addCircleMarkers(lng = Y$longitude[filter][is], lat = Y$latitude[filter][is],fill=FALSE,
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        radius=6,stroke=TRUE, weight=3, color='green',
-                       layerId = Y$station.id[filter][highlight],
+                       layerId = Y$station.id[filter][is],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
       addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
                        label=paste0(lhighlight,': ',Y$location[highlight],' - ',
@@ -596,7 +601,7 @@ server <- function(input, output, session) {
       addProviderTiles(providers$Esri.WorldStreetMap,
                        #addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = FALSE)) %>% 
-      setView(lat=Y$latitude[is],lng = Y$longitude[is], zoom = zoom())
+      setView(lat=Y$latitude[filter][is],lng = Y$longitude[filter][is], zoom = zoom())
   })
   
   output$plotstation <- renderPlotly({
@@ -660,6 +665,18 @@ server <- function(input, output, session) {
     ## Get summary data from the netCDF file
     Y <- updatemetadata()
     statistic <- vals()
+    
+    ## Apply filter to highlight stations selected in the map
+    if (input$country=='All') filter <- rep(TRUE,length(statistic)) else {
+      filter <- rep(FALSE,length(statistic))
+      filter[(Y$country == input$country)] <- TRUE
+    }
+    #print('        <<< input$ci is not updated!!! >>>              ')
+    #isolate({print(paste('Range shown in map',input$statisticrange[1],'-',input$statisticrange[1],' ci=',input$ci))})
+    filter[statistic < input$statisticrange[1]] <- FALSE
+    filter[statistic > input$statisticrange[2]] <- FALSE
+    statistic <- statistic[filter]
+    
     y0 <- updatestation()
     y <- updatetimeseries()
     
@@ -771,8 +788,21 @@ server <- function(input, output, session) {
       z <- Y[[input$xy_size]]
       size <- 30*sqrt( (z - min(z,na.rm=TRUE))/(max(z,na.rm=TRUE) - min(z,na.rm=TRUE)) )
     }
-    Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col, 
-                    size=size,name=as.character(paste(Y$location,Y$station.id)),stringsAsFactors = FALSE)
+    
+    ## Apply filter to highlight stations selected in the map
+    if (input$country=='All') filter <- rep(TRUE,n) else {
+      filter <- rep(FALSE,n)
+      filter[(Y$country == input$country)] <- TRUE
+    }
+    #print('        <<< input$ci is not updated!!! >>>              ')
+    #isolate({print(paste('Range shown in map',input$statisticrange[1],'-',input$statisticrange[1],' ci=',input$ci))})
+    filter[statistic < input$statisticrange[1]] <- FALSE
+    filter[statistic > input$statisticrange[2]] <- FALSE
+    Y <- Y[filter,]
+    
+    Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col[filter], 
+                    size=size[filter],name=as.character(paste(Y$location,Y$station.id))[filter],
+                    stringsAsFactors = FALSE)
     size <- size[is.finite(Z[,1]) & is.finite(Z[,2])]
     Z <- Z[is.finite(Z[,1]) & is.finite(Z[,2]),]
     #print(summary(Z))
@@ -865,7 +895,7 @@ server <- function(input, output, session) {
     } else {
       hsum <- paste(attr(y,'longname'),'period=',paste(range(index(y)),collapse='-'))
     }
-    #print(input$timespace); print(timespace); print(match(input$timespace,timespace))
+    print(input$timespace); print(timespace); print(match(input$timespace,timespace))
     hdescr <- timespacedescr[as.numeric(input$lingo),match(input$timespace,timespace)]
     if (input$timespace != 'Histogram_map') hdescr <- paste(hdescr,esd::loc(y),'in',esd::cntr(y)[1])
     if (input$timespace == 'Histogram_location') {

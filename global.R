@@ -277,11 +277,11 @@ timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk','Oppsummert år',
                         c('Monthly statistics','Daily statistics','Cumulated daily','Year and day',
                           'Histogram','Spatial statstics'))
 timespacedescr <- rbind(c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
-                          'Dag og år','Histogram for','Statistikk for steder vist på kartet'),
+                          'Dager oppsummert','Dag og år','Histogram for','Statistikk for steder vist på kartet'),
                         c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
-                          'Dag og år','Histogram for','Statistikk for stadar vist på kartet'),
+                          'Dagar oppsummert','Dag og år','Histogram for','Statistikk for stadar vist på kartet'),
                         c('Annual cycle (monthly) for','Annual cycle (daily) for',
-                          'Day and year','Histogram for','Histogram for the locations shown in map'))
+                          'Days accumulated','Day and year','Histogram for','Histogram for the locations shown in map'))
 
 names(timespace) <- timespacenames[1,]
 
