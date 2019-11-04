@@ -571,7 +571,7 @@ server <- function(input, output, session) {
     #             'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
     #             input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
     # print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
-    print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
+      print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
                 Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is]))
     
     leaflet("mapid") %>% 
@@ -883,6 +883,17 @@ server <- function(input, output, session) {
     y <- updatetimeseries()
     Y <- updatemetadata()
     statistic <- vals()
+    ## Apply filter to highlight stations selected in the map
+    n <- length(statistic)
+    if (input$country=='All') filter <- rep(TRUE,n) else {
+      filter <- rep(FALSE,n)
+      filter[(Y$country == input$country)] <- TRUE
+    }
+    #print('        <<< input$ci is not updated!!! >>>              ')
+    #isolate({print(paste('Range shown in map',input$statisticrange[1],'-',input$statisticrange[1],' ci=',input$ci))})
+    filter[statistic < input$statisticrange[1]] <- FALSE
+    filter[statistic > input$statisticrange[2]] <- FALSE
+    statistic <- statistic[filter]
     
     if (input$timespace == 'Histogram_location') {
       yH <- coredata(y) 
