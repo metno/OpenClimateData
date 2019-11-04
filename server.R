@@ -584,6 +584,7 @@ server <- function(input, output, session) {
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
       addCircleMarkers(lng = Y$longitude[filter][is], lat = Y$latitude[filter][is],fill=FALSE,
+                       label = paste(Y$location[filter][is],as.character(round(statistic[filter][is],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        radius=6,stroke=TRUE, weight=3, color='green',
                        layerId = Y$station.id[filter][is],
@@ -885,7 +886,7 @@ server <- function(input, output, session) {
     statistic <- vals()
     ## Apply filter to highlight stations selected in the map
     n <- length(statistic)
-    if (input$country=='All') filter <- rep(TRUE,n) else {
+      if (input$country=='All') filter <- rep(TRUE,n) else {
       filter <- rep(FALSE,n)
       filter[(Y$country == input$country)] <- TRUE
     }
