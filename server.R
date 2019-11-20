@@ -590,8 +590,8 @@ server <- function(input, output, session) {
                        layerId = Y$station.id[filter][is],
                        fillOpacity = 0.6,fillColor=rep("black",10)) %>%
       addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
-                       label=paste0(lhighlight,': ',Y$location[highlight],' - ',
-                                    as.character(round(statistic[highlight],digits = 2))),
+                       label=paste0(lhighlight,': ',Y$location[filter][highlight],' - ',
+                                    as.character(round(statistic[filter][highlight],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        radius=6,stroke=TRUE, weight=3, color='black',
                        layerId = Y$station.id[filter][highlight],
@@ -800,7 +800,13 @@ server <- function(input, output, session) {
     filter[statistic < input$statisticrange[1]] <- FALSE
     filter[statistic > input$statisticrange[2]] <- FALSE
     Y <- Y[filter,]
-    
+    x0 <- as.numeric(input$x0)
+    if (!is.null(Y$wetmean)) { 
+      Y[['10.year.return.value']] <- -Y$wetmean*log(1/(Y$wetfreq*36.525))*1.4 - 3.82
+      Y[['Number_of_days']] <- Y$wetfreq*exp(-x0/Y$wetmean)
+    } else Y[['Number_of_days']] <- 365.25*(1-pnorm(x0,mean=0,sd=Y$sd))
+    print(names(Y))
+    print(c(input$x_variable,input$y_variable))
     Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col[filter], 
                     size=size[filter],name=as.character(paste(Y$location,Y$station.id))[filter],
                     stringsAsFactors = FALSE)
