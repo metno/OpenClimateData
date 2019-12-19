@@ -583,19 +583,19 @@ server <- function(input, output, session) {
                        radius =radius,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
                        fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
-      addCircleMarkers(lng = Y$longitude[filter][is], lat = Y$latitude[filter][is],fill=FALSE,
+      addCircleMarkers(lng = Y$longitude[filter][is], lat = Y$latitude[filter][is],fill=TRUE,
                        label = paste(Y$location[filter][is],as.character(round(statistic[filter][is],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        radius=6,stroke=TRUE, weight=3, color='green',
-                       layerId = Y$station.id[filter][is],
-                       fillOpacity = 0.6,fillColor=rep("black",10)) %>%
+                       fillOpacity = 0.5,fillColor = pal(statistic[filter])[is],
+                       layerId = Y$station.id[filter][is]) %>%
       addCircleMarkers(lng = lon.highlight, lat = lat.highlight,fill=TRUE,
                        label=paste0(lhighlight,': ',Y$location[filter][highlight],' - ',
                                     as.character(round(statistic[filter][highlight],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
                        radius=6,stroke=TRUE, weight=3, color='black',
                        layerId = Y$station.id[filter][highlight],
-                       fillOpacity = 0.1,fillColor=rep("black",10)) %>%
+                       fillOpacity = 0.5,fillColor=pal(statistic[filter])[highlight]) %>%
       addLegend("bottomright", pal=pal, values=round(statistic[filter], digits = 2), 
                 title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
@@ -729,9 +729,19 @@ server <- function(input, output, session) {
       if (input$timespace=='Annual_cycle_month') {
         mac <- data.frame(y=as.monthly(y,FUN=FUN)) 
         mac$Month <- month(as.monthly(y))
+        mac$Year <- year(as.monthly(y))
+        nv <- as.monthly(y,FUN='nv')
+        mac$y[nv < 28] <- NA
+        yrnow <- format(Sys.time(),'%Y')
+        it <- is.element(mac$Year,as.numeric(yrnow))
+        print(c(length(it),sum(it)))
         type='box'
         AC <- plot_ly(mac,x=~Month,y=~y,name='mean_annual_cycle',type=type)  %>% 
           layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Calendar month'))
+        ## REB add the last month
+        lyr <- data.frame(y=mac$y[it],Month=mac$Month[it])
+        print(lyr)
+        AC <- AC %>% add_trace(AC,data=lyr,x=~Month,y=~y,name=yrnow,type='scatter')
       } else {
         y <- updatestation()
         clim <- climatology(y)

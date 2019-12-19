@@ -1,5 +1,5 @@
 ### title: OpenClimateDataPortal
-### See comments and explanations in global.R
+### See comments and explanat ions in global.R
 ### Rasmus Benestad
 ###----------------------------------
 
@@ -34,7 +34,7 @@ ui <- dashboardPage(
                                window.dataLayer = window.dataLayer || [];
                                function gtag(){dataLayer.push(arguments);}
                                gtag('js', new Date());
-                               gtag('config', 'UA-108282573-5', { 'anonymize_ip': true }); 
+                               gtag('config', 'UA-152972617-1 ', { 'anonymize_ip': true }); 
                                </script>"
     )),
     tags$head(
