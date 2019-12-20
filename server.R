@@ -741,7 +741,7 @@ server <- function(input, output, session) {
         ## REB add the last month
         lyr <- data.frame(y=mac$y[it],Month=mac$Month[it])
         print(lyr)
-        AC <- AC %>% add_trace(AC,data=lyr,x=~Month,y=~y,name=yrnow,type='scatter')
+        AC <- AC %>% add_trace(AC,data=lyr,x=~Month,y=~y,name=yrnow,type='scatter',size=10)
       } else {
         y <- updatestation()
         clim <- climatology(y)
