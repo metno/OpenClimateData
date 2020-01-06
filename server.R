@@ -742,6 +742,11 @@ server <- function(input, output, session) {
         lyr <- data.frame(y=mac$y[it],Month=mac$Month[it])
         print(lyr)
         AC <- AC %>% add_trace(AC,data=lyr,x=~Month,y=~y,name=yrnow,type='scatter',size=10)
+        clim6190 <- aggregate(subset(as.monthly(y),it=1961:1990),month,FUN=FUN)
+        clim8120 <- aggregate(subset(as.monthly(y),it=1981:2020),month,FUN=FUN)
+        klim <- data.frame(Month=1:12,y1=clim6190,y2=clim8120)
+        AC <- AC %>% add_trace(AC,data=klim,x=~Month,y=~y1,name='1961-1990',type='scatter',mode='lines',line=list(width = 4))
+        AC <- AC %>% add_trace(AC,data=klim,x=~Month,y=~y2,name='1981-2020',type='scatter',mode='lines',line=list(width = 2, dash = 'dash'))
       } else {
         y <- updatestation()
         clim <- climatology(y)
@@ -759,7 +764,8 @@ server <- function(input, output, session) {
         ## For current year, use black colour
         if (sum(iyr)>0) colorpal[iyr] <- rgb(0,0,0)
         mac <- as.data.frame(cbind(coredata(clim),Z))
-        mac$day=1:365
+        mac$day <- 1:365
+  
         AC <- plot_ly(mac,name='annual_cycle',type='scatter',mode='markers', showlegend = (input$showlegend=='Show')) 
         
         for (i in 1:length(yrs)) {
@@ -771,7 +777,7 @@ server <- function(input, output, session) {
         }
         #print(names(mac))
         if (input$timespace!='Annual_cycle_cumugram') 
-              AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='grey')) 
+              AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='white')) 
         AC <- AC %>%
           layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
       }
@@ -795,10 +801,6 @@ server <- function(input, output, session) {
       lcol <- 'rgba(150, 150, 150, .8)'
       lwidth <- 1
     }
-    if (input$xy_size=="Uniform") size <- rep(10,n) else {
-      z <- Y[[input$xy_size]]
-      size <- 30*sqrt( (z - min(z,na.rm=TRUE))/(max(z,na.rm=TRUE) - min(z,na.rm=TRUE)) )
-    }
     
     ## Apply filter to highlight stations selected in the map
     if (input$country=='All') filter <- rep(TRUE,n) else {
@@ -810,6 +812,12 @@ server <- function(input, output, session) {
     filter[statistic < input$statisticrange[1]] <- FALSE
     filter[statistic > input$statisticrange[2]] <- FALSE
     Y <- Y[filter,]
+    
+    if (input$xy_size=="Uniform") size <- rep(10,sum(filter)) else {
+      z <- Y[[input$xy_size]]
+      size <- 30*sqrt( (z - min(z,na.rm=TRUE))/(max(z,na.rm=TRUE) - min(z,na.rm=TRUE)) )
+    }
+    
     x0 <- as.numeric(input$x0)
     if (!is.null(Y$wetmean)) { 
       Y[['10.year.return.value']] <- -Y$wetmean*log(1/(Y$wetfreq*36.525))*1.4 - 3.82
@@ -818,7 +826,7 @@ server <- function(input, output, session) {
     print(names(Y))
     print(c(input$x_variable,input$y_variable))
     Z <- data.frame(x=Y[[input$x_variable]],y=Y[[input$y_variable]], Col = Col[filter], 
-                    size=size[filter],name=as.character(paste(Y$location,Y$station.id))[filter],
+                    size=size,name=as.character(paste(Y$location,Y$station.id))[filter],
                     stringsAsFactors = FALSE)
     size <- size[is.finite(Z[,1]) & is.finite(Z[,2])]
     Z <- Z[is.finite(Z[,1]) & is.finite(Z[,2]),]
