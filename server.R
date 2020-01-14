@@ -5,7 +5,7 @@
 # Load the ggplot2 package which provides
 # the 'mpg' dataset.
 
-# Define a server for the Shiny app
+# Define a server for the Shiny app 
 server <- function(input, output, session) {
   
   ## Functions ---------------------------------------------------------------------------------------------------------
@@ -651,9 +651,14 @@ server <- function(input, output, session) {
       timeseries <- data.frame(date=index(y),y=coredata(y),trend=coredata(trend(y)))
       #print(summary(timeseries))
       TS <- plot_ly(timeseries,x=~date,y=~y,type = 'scatter',mode='lines',name='data')
-      TS = TS %>% add_trace(y=~trend,name='trend') %>% 
-        add_markers(x=index(highlight10),y=coredata(highlight10),hoveron=input$highlightTS) %>% 
-        layout(title=loc(y),yaxis = list(title=esd::unit(y)))
+      if (tolower(input$highlightTS)=='none') { 
+        TS = TS %>% add_trace(y=~trend,name='trend') %>% 
+          layout(title=loc(y),yaxis = list(title=esd::unit(y)))
+      } else {
+        TS = TS %>% add_trace(y=~trend,name='trend') %>% 
+          add_markers(x=index(highlight10),y=coredata(highlight10),hoveron=input$highlightTS) %>% 
+          layout(title=loc(y),yaxis = list(title=esd::unit(y)))
+      }
     }
     #TS$elementID <- NULL
     
@@ -777,7 +782,7 @@ server <- function(input, output, session) {
         }
         #print(names(mac))
         if (input$timespace!='Annual_cycle_cumugram') 
-              AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='white')) 
+          AC <- AC %>% add_lines(data=mac,x=~day,y=~V1,name='Climatology',line = list(width = 2,shape ='spline',color='white')) 
         AC <- AC %>%
           layout(yaxis=list(title=esd::unit(y)),xaxis=list(title='Julian day'))
       }
