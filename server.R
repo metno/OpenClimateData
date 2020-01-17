@@ -283,8 +283,8 @@ server <- function(input, output, session) {
       print(input$location);print('Something is wrong!')
       selectedStid <- getstid()
     }
-    #print(paste('selectedID: ',selectedStid,' = ',input$location,'from',updatefile(),
-    #            "  - y <- retrieve.station(",updatefile(),selectedStid,")"))
+    print(paste('selectedID: ',selectedStid,' = ',input$location,'from',updatefile(),
+                "  - y <- retrieve.station(",updatefile(),selectedStid,")"))
     y <- retrieve.station(updatefile(),stid=selectedStid,verbose=verbose)
     ## Update slider
     updateSliderInput(session=session,inputId="itt",value = range(year(y)),
@@ -315,7 +315,7 @@ server <- function(input, output, session) {
         x0 <- 0
         y <- anomaly(y)
       }
-      #print('Number of days and not precipitation')
+      print('Number of days and not precipitation')
       meanx <- switch(input$tscale,
                       'month'=as.monthly(y,FUN='mean',nmin=25),
                       'season'=as.4seasons(y,FUN='mean',nmin=80),
@@ -332,7 +332,7 @@ server <- function(input, output, session) {
                     'month'=30,
                     'season'=90,
                     'year'=365.25)
-      #print('Probability')
+      print('Probability')
       pr <- 1 - pnorm(x0,mean=meanx,sd=sdx)
       return(merge(pr,y/nds))
     } else FUN<-'mean'
