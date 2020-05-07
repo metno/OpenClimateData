@@ -24,27 +24,27 @@ library(RColorBrewer)
 type2name <-function(stattype,lingo,types) {
   print('<A: type2name')
   names <- rbind(
-    c("Høyde over havet","Start år","Dager uten nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høye rekorder",
-      "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
+    c("Høyde over havet","Start år","Dager siden siste regn","siste dager i strekk med nedbør","Siste år","Breddegrad",           
+      "Lengdegrad","Maksimumsverdi","Gjennomsnitt","Minimumsverdi","Antall år med data",
+      "Antall høye rekorder","Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
       "Dager med nedbør","Typisk nedbørsintensitet",
       "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians",
       "Varianstrend","10-år-returverdi","Gjennomsnittlig opphold","Gjennomsnittlig regnvarighet",
-      "Dager over normalen"),
-    c("Høgde over havet","Start år","Dager utan nedbør","Siste år","Breddegrad","Lengdegrad","Maksimumsverdi",           
-      "Gjennomsnitt","Minimumsverdi","Antall år med data","Antall høge rekordar",
-      "Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
+      "Dager over normalen","Andel med flere våte dager","Andel med flere tørre dager"),
+    c("Høgde over havet","Start år","Dagar siden siste regn","siste dagar i strekk med nedbør","Siste år","Breddegrad",           
+      "Lengdegrad","Maksimumsverdi","Gjennomsnitt","Minimumsverdi","Antall år med data",
+      "Antall høge rekordar","Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
       "Dager med nedbør","Typisk nedbørsintensitet",
       "Antall dagar over terskelverdi","Utvalgt dato","Standardavvik","Antall låge rekordar","Varians",
       "Varianstrend","10-år-returverdi","Gjennomsnittlig opphold","Gjennomsnittlig regnvarighet",
-      "Dagar over normalen"),
-    c("Altitude","Start year","Days without precipitation","End year","Latitude","Longitude","Maximum",           
-      "Average","Minimum","Years with data"," Number of record-highs",
+      "Dagar over normalen","Andel med fleire våte dagar","Andel med fleire tørre dagar"),
+    c("Altitude","Start year","Days since last rain","Continuous ongoing rainy days","End year","Latitude",           
+      "Longitude","Maximum","Average","Minimum","Years with data"," Number of record-highs",
       "Trend","Trend in wet days","Trend in rain intensity", 
       "Number of wet days","Mean rain intensity","Number of days above threshold",
       "Specific date","Standard deviation","Number of record-lows","Variance",
       "Trend in variance","10-year-return-value","Average dry spell","Average wet spell",
-      "Days above normal")
+      "Days above normal","Proportion with longer wet spells","Proportion with longer dry spells")
   )
   matchingname <- names[as.numeric(lingo),]
   descr <- matchingname[match(tolower(stattype),tolower(types))]
@@ -55,7 +55,7 @@ explainmapstatistic <- function(stattype,lingo,types) {
   print('<B: explainmapstatistic')
   descriptions <- rbind(
     c("Høyde over havet i meter (metadata)","Året da målingene startet (metadata)",
-      "Hvor mange dager det har gått uten nedbør",
+      "Hvor mange dager det har gått uten nedbør","Hvor mange dager det har gått med nedbør",
       "Siste år med målinger (metadata)","Målestasjonens breddegrad (metadata)",
       "Målestasjoens lengdegrad (metadata)","Maksimumsverdi",           
       "Gjennomsnittlig over flere år eller sesonger.",
@@ -71,9 +71,11 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Et grovt estimat av 10-års-returverdi basert på enkel modell",
       "Gjennomsnittlig varighet på oppholdsperioder (dager)",
       "Gjennomsnittlig varighet på nedbørsepisoder (dager)",
-      "Dager over normalen"),
+      "Dager over normalen",
+      "Hvor stor andel av våte perioder er lengre enn denne (basert på geometrisk fordelign)",
+      "Hvor stor andel av tørre perioder er lengre enn denne (basert på geometrisk fordelign)"),
     c("Høgde over havet i meter (metadata)","Året da mælingane starta (metadata)",
-      "Kor mange dagar det har gått utan nedbør",
+      "Kor mange dagar det har gått utan nedbør","Hvor mange dager det har gått med nedbør",
       "Siste år med mælinger (metadata)","Mælestasjonens breddegrad (metadata)",
       "Mælestasjoens lengdegrad (metadata)","Maksimumsverdi",           
       "Gjennomsnittleg over fleire år eller sesongar.",
@@ -89,9 +91,12 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Eit grovt estimat av 10-års-returverdi basert på enkel modell",
       "Gjennomsnittlig varighet på oppholdsperioder (dagar)",
       "Gjennomsnittlig varighet på nedbørsepisoder (dagar)",
-      "Dager over normalen"),
+      "Dager over normalen",
+      "Hvor stor andel av våte perioder er lengre enn denne (basert på geometrisk fordelign)",
+      "Hvor stor andel av tørre perioder er lengre enn denne (basert på geometrisk fordelign)"),
     c("The elevation of the station in m above sea level (metadata))",
-      "The year when the observations started (metadata)","Number of days since it last rained",
+      "The year when the observations started (metadata)","Number of days without rain",
+      "Number of days with rain",
       "The last year with observations (metadata)","The latitude of the station in degrees north (metadata)",
       "The longitude of the station in degrees east (metadata)","The highest recorded value",           
       "The average over the years or seasons",
@@ -109,7 +114,9 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Estimated variance in daily rainfall","Trend in estimated daily rainfall variance",
       "Simple and approximate estimate of the 10-year-return-value",
       "Mean duration of a dry spell (days)","Mean duration of a wet spell (days)",
-      "Day with measurements above the normal")
+      "Day with measurements above the normal",
+      "The proportion of wet spells longer than the current one (according to a geometric distribution)",
+      "The proportion of dry spells longer than the current one (according to a geometric distribution)")
   )
   #print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
@@ -138,7 +145,7 @@ getstattype <- function(fname,lingo=NULL) {
   if ( (length(grep('wetmean',names(meta)))>0) & (length(grep('wetfreq',names(meta)))>0) )
     stattype <- c(stattype,'10.year.return.value')
   if (length(grep('wetdur',names(meta)))) {
-     stattype <- c(stattype,'mean_drydur','mean_wetdur') 
+     stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry') 
   }
   if (length(grep('sd_',names(meta)))) {
     stattype <- c(stattype,'Days_Above_normal') 
@@ -153,11 +160,11 @@ getstattype <- function(fname,lingo=NULL) {
 
 ## Plain text description of the statistics presented on the climate indicators for ordinary people.
 vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
-                               'cc','ss','pp','fg','fx','sd','dd'),
+                               'cc','ss','pp','fg','fx','sd','dd','qq'),
                       names=c('Precipitation','Daily mean temperature',
                               'Daily max temperature','Daily min temperature',
                               'Cloud cover','Sunshine','Pressure','Wind speed',
-                              'Wind gust','Snow depth','Wind direction'),nc=3) {
+                              'Wind gust','Snow depth','Wind direction','Global Radiation'),nc=3) {
   print('<C: vari2name')
   y <- x
   if (length(vars) != length(names)) stop("vars have different length to names in 'variname'")
@@ -253,10 +260,11 @@ sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner 
                   c('INAM','INAM','INAM'),c('CLARIS','CLARIS','CLARIS'))
 
 ## Types of statistics
-types <- c("altitude","first.year","lastrains","last.year","latitude","longitude","max",           
+types <- c("altitude","first.year","lastrains","lastdry","last.year","latitude","longitude","max",           
            "mean","min","number.valid","records","trend","trend_wetfreq","trend_wetmean", 
            "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows","sigma2",
-           "trend_sigma2","10.year.return.value","mean_drydur","mean_wetdur","Days_above_normal")
+           "trend_sigma2","10.year.return.value","mean_drydur","mean_wetdur","Days_above_normal",
+           "prob_long_wet","prob_long_dry")
 
 ## Seasons for the statistics presented in the maps
 sea <- c('All year'='all','Dec-Feb'='DJF',
@@ -317,13 +325,13 @@ aspectnameT <- rbind(c("Målt","Avvik fra normalen","Antall dager","Dager over n
                      c("Measured","Anomaly","Number of days","Days above normal"))
 varnames=rbind(c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur',
                  'Skydekke','Soltimer','Trykk','Vindhastighet',
-                 'Maks vindhastighet','Snødybde','Vindretning'),
+                 'Maks vindhastighet','Snødybde','Vindretning','Stråling'),
                c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur',
                  'Skydekke','Soltimar','Trykk','Vindhastighet',
-                 'Maks vindhastighet','Snødybde','Vindretning'),
+                 'Maks vindhastighet','Snødybde','Vindretning','Stråling'),
                c('Precipitation','Daily mean temperature','Daily max temperature','Daily min temperature',
                  'Cloud cover','Sunshine','Pressure','Wind speed',
-                 'Wind gust','Snow depth','Wind direction'))
+                 'Wind gust','Snow depth','Wind direction','Global radiation'))
 timescales <- rbind(c('Dag','Måned','Sesong','År'),
                     c('Dag','Måned','Sesong','År'),
                     c('Day','Month','Season','Year'))

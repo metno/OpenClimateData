@@ -1,2 +1,0 @@
-# OpenClimateData
-Open Climate Data

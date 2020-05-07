@@ -259,6 +259,17 @@ server <- function(input, output, session) {
   updatemetadata <- reactive({
     print('<16: reactive - updatemetadata()')
     Y <- retrieve.stationsummary(updatefile())
+    ## For duplicated sites, add some small noise in the location coordinates to seperate
+        dup <- duplicated(paste(Y$longitude,Y$latitude))
+    if (sum(dup)>0) Y$longitude[dup] <- Y$longitude[dup] + 0.0001*rnorm(sum(dup))
+    if (sum(dup)>0) Y$latitude[dup] <- Y$latitude[dup] + 0.0001*rnorm(sum(dup))
+    ## For duplicated names, add 'II' 
+    dup <- duplicated(Y$location)
+    if (sum(dup)>0) Y$location[dup] <- paste(Y$location[dup],'II')
+    while (sum(dup) > 0) {
+      dup <- duplicated(Y$location)
+      if (sum(dup)>0) Y$location[dup] <- paste(Y$location[dup],'I',sep='')
+    }
     ok <- is.finite(Y$lon) & is.finite(Y$lat)
     Y <- Y[ok,]
     #print(paste('Retrieved from ',updatefile(),'with',dim(Y)[1],'locations and',dim(Y)[2],'elements:',
@@ -277,7 +288,7 @@ server <- function(input, output, session) {
   updatestation <- reactive({
     print('<18: reactive - updatestation()')
     Y <- updatemetadata()
-    Y <- retrieve.stationsummary(updatefile())
+    #Y <- retrieve.stationsummary(updatefile()) #REB this line should not be here
     il <- is.element(tolower(Y$location),tolower(input$location))
     if (sum(il)>0) selectedStid <- Y$station.id[il][1] else {
       print(input$location);print('Something is wrong!')
@@ -433,6 +444,10 @@ server <- function(input, output, session) {
     if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
     if (input$statistic=='records') Z <- 100*Z
     if (input$statistic=='lows') Z <- 100*Z
+    ## REB 2020-04-21 m: probability for reent dry/wet days being long based on a geometric distribution
+    ## of the durations of dry/wet spells.  
+    if (input$statistic == 'prob_long_wet') Z <- 100*(1-pgeom(Y$lastdry,1/Y$mean_wetdur))
+    if (input$statistic == 'prob_long_dry') Z <- 100*(1-pgeom(Y$lastrains,1/Y$mean_drydur))
     if (tolower(input$statistic)=='sigma2') Z[Z > 20000] <- NA
     Z[Z <= -99] <- NA
     Z <- round(Z,3)
@@ -463,6 +478,9 @@ server <- function(input, output, session) {
     if ( (length(grep(tolower('mean'),tolower(input$statistic)))>0) & 
          (length(grep(tolower('day'),tolower(title)))>0) ) title <- sub('/day','',title)
     if (length(grep(tolower('sigma2'),tolower(input$statistic)))>0) title <- 'mm^2'
+    if (length(grep(tolower('prob_long'),tolower(input$statistic)))>0) title <- '%'
+    ## Change the legend if presenting probability for last days beeing longlasting wet/dry
+    if (length(grep(tolower('last'),tolower(input$statistic)))>0) title <- 'days'
     #print(paste('legend title',title))
     return(title)
   })
@@ -519,17 +537,22 @@ server <- function(input, output, session) {
               #print('--- Higlight new records ---')
               ## For a specific day, check against the maximum or minimum
               if (tolower(input$statistic)!='specific_day') {
+                ## If a specific day is chosen, then compare the last day against maximum values 
                 x <- retrieve.station(updatefile(),it=attr(Y,'period')[2],verbose=verbose)
                 Z <- c(coredata(x))
                 dim(Z) <- c(length(Z),1)
                 ## The stations are sorted according to alphabetic order
                 Z <- Z[match(Y$station.id,stid(x))]
-              } else Z <- statistic
+              } else {
+                ## Else compare the selected day against the maximum.
+                Z <- statistic
+              }
               #print(paste('Minimum?',is.null(Y$min)))
+              ## Check if the current day equals the maximum value: if so, then highlight
               if (!is.null(Y$wetmean)) 
                 highlight <- (Z[filter] - Y$max[filter] > -0.001) & is.finite(Z[filter]) else 
-                  highlight <- ((Z[filter] - Y$max[filter] > -0.001) | 
-                                  (Z[filter] - Y$min[filter] < 0.001)) & is.finite(Z[filter])
+                highlight <- ((Z[filter] - Y$max[filter] > -0.001) | 
+                                    (Z[filter] - Y$min[filter] < +0.001)) & is.finite(Z[filter])
               #print('RECORDS?')
               highlight[is.na(highlight)] <- FALSE
               #print(paste('Number of records on',input$it,'is',sum(highlight,na.rm=TRUE)))
