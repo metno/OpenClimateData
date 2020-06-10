@@ -1,5 +1,5 @@
 ### title: OpenClimateDataPortal
-### See comments and explanat ions in global.R
+### See comments and explanations in global.R
 ### Rasmus Benestad
 ###----------------------------------
 
