@@ -172,7 +172,7 @@ server <- function(input, output, session) {
   # Update the list of aspects in the past weather box:
   observe({
     print(paste('<10: observe - Update aspects: input$ci=',input$ci,'input$lingo=',input$lingo))
-    varids <- updatevarids()
+    #REB2020-11-05*** varids <- updatevarids()
     ii <- as.numeric(input$ci)
     ## The next lines is  fudge to avoid crash if input$ci is not properly updated
     if (ii > length(varids)) ii <- (1:length(varid))[is.element(varids,'precip')]
@@ -771,10 +771,10 @@ server <- function(input, output, session) {
         print(lyr)
         AC <- AC %>% add_trace(AC,data=lyr,x=~Month,y=~y,name=yrnow,type='scatter',size=10)
         clim6190 <- aggregate(subset(as.monthly(y),it=1961:1990),month,FUN=FUN)
-        clim8120 <- aggregate(subset(as.monthly(y),it=1981:2020),month,FUN=FUN)
-        klim <- data.frame(Month=1:12,y1=clim6190,y2=clim8120)
+        clim9120 <- aggregate(subset(as.monthly(y),it=1991:2020),month,FUN=FUN)
+        klim <- data.frame(Month=1:12,y1=clim6190,y2=clim9120)
         AC <- AC %>% add_trace(AC,data=klim,x=~Month,y=~y1,name='1961-1990',type='scatter',mode='lines',line=list(width = 4))
-        AC <- AC %>% add_trace(AC,data=klim,x=~Month,y=~y2,name='1981-2020',type='scatter',mode='lines',line=list(width = 2, dash = 'dash'))
+        AC <- AC %>% add_trace(AC,data=klim,x=~Month,y=~y2,name='1991-2020',type='scatter',mode='lines',line=list(width = 2, dash = 'dash'))
       } else {
         y <- updatestation()
         clim <- climatology(y)
