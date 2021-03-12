@@ -13,6 +13,7 @@ then
   sudo add-apt-repository ppa:c2d4u.team/c2d4u4.0+
   #sudo apt-get install r-base-core
   sudo su - -c "R -e \"install.packages('shiny',repos='https://cran.rstudio.com/')\""
+
 fi
 
 ## Set up the shiny-server:
@@ -30,14 +31,19 @@ sudo apt-get install libnetcdf-dev
 sudo apt-get install liblapack-dev
 sudo apt-get install libssl-dev
 sudo apt-get install libgit2-dev
+sudo su - -c "R -e \"install.packages('devtools',repos='https://cran.rstudio.com/')\""
+sudo su - -c "R -e \"install.packages('shinydashboard',repos='https://cran.rstudio.com/')\""
+sudo su - -c "R -e \"install.packages('leaflet',repos='https://cran.rstudio.com/')\""
+sudo su - -c "R -e \"install.packages('plotly',repos='https://cran.rstudio.com/')\""
 
 ## Install needed R-packages:
 cat > set-up.R << EOF
-  install.packages(c('devtools','shiny','shinydashboard','leaflet','plotly'),repos='http://cran.uib.no')
+  ## This line does not work well on a VM
+  ##install.packages(c('devtools','shiny','shinydashboard','leaflet','plotly'),repos='http://cran.uib.no')
   library(devtools)
   install_github('metno/esd')
 EOF
 
 ## Launch the app:
 R --slave --no-restore -e 'source("set-up.R")'
-ln -s OpenClimateData/launch.sh 
+ln -s OpenClimateData/launch.sh ~/launch.sh
