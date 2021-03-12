@@ -145,7 +145,7 @@ getstattype <- function(fname,lingo=NULL) {
   if ( (length(grep('wetmean',names(meta)))>0) & (length(grep('wetfreq',names(meta)))>0) )
     stattype <- c(stattype,'10.year.return.value')
   if (length(grep('wetdur',names(meta)))) {
-     stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry') 
+    stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry') 
   }
   if (length(grep('sd_',names(meta)))) {
     stattype <- c(stattype,'Days_Above_normal') 
@@ -193,9 +193,11 @@ src <- fnames
 for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
 src <- rownames(table(src))
 print(src)
-reg1 <- (1:length(src))[is.element(src,'metnod')]                          ## Default source of dataset/region
-fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
-fnames <- fnames[grep(src[reg1],fnames)]
+if (length(reg) > 1) { 
+  reg1 <- (1:length(src))[is.element(src,'metnod')]                          ## Default source of dataset/region
+  fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
+  fnames <- fnames[grep(src[reg1],fnames)]
+}
 
 ## Extract variables
 #varids <- list.files(path='data',pattern='.nc',full.names = FALSE)
