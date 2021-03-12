@@ -193,11 +193,11 @@ src <- fnames
 for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
 src <- rownames(table(src))
 print(src)
-if (length(reg) > 1) { 
+if (length(src) > 1) { 
   reg1 <- (1:length(src))[is.element(src,'metnod')]                          ## Default source of dataset/region
   fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
   fnames <- fnames[grep(src[reg1],fnames)]
-}
+} else reg1 <- 1
 
 ## Extract variables
 #varids <- list.files(path='data',pattern='.nc',full.names = FALSE)
