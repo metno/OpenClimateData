@@ -179,7 +179,7 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
 
 
 ## The start-up settings - global variables etc used in the UI and server. Supports several languages
-print('--- <Initiatial settings> ---')
+print('--- <Initial settings> ---')
 ## Defaults
 verbose <-FALSE                     ## For debugging
 lingo <- 1                         ## Default language option                

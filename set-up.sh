@@ -46,4 +46,7 @@ cat > set-up.R << EOF
 EOF
 
 ## Launch the app:
+R --slave --no-restore -e 'source("set-up.R")'
+## Let R know where the local R-libraries are
+export R_LIBS=~/Rlibs:$R_LIBS
 ln -s OpenClimateData/launch.sh ~/launch.sh
