@@ -31,6 +31,7 @@ sudo apt-get install libnetcdf-dev
 sudo apt-get install liblapack-dev
 sudo apt-get install libssl-dev
 sudo apt-get install libgit2-dev
+sudo apt-get install libxml2-dev
 sudo su - -c "R -e \"install.packages('devtools',repos='https://cran.rstudio.com/')\""
 sudo su - -c "R -e \"install.packages('shinydashboard',repos='https://cran.rstudio.com/')\""
 sudo su - -c "R -e \"install.packages('leaflet',repos='https://cran.rstudio.com/')\""
