@@ -1,10 +1,18 @@
 #/bin/bash
 
 ## Set up R:
+
 if ! command -v R    &> /dev/null
 then
-  sudo apt-get install r-base-core
-  sudo su - -c “R -e \”install.packages(‘shiny’,repos=’https://cran.rstudio.com/’)\””
+## Set up -the R-version 4.0 - recipe from https://cran.r-project.org/
+  sudo apt update -qq
+  sudo apt install --no-install-recommends software-properties-common dirmngr
+  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+  sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/"  
+  sudo apt install --no-install-recommends r-base
+  sudo add-apt-repository ppa:c2d4u.team/c2d4u4.0+
+  #sudo apt-get install r-base-core
+  sudo su - -c "R -e \"install.packages('shiny',repos='https://cran.rstudio.com/')\""
 fi
 
 ## Set up the shiny-server:
