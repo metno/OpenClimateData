@@ -46,5 +46,4 @@ cat > set-up.R << EOF
 EOF
 
 ## Launch the app:
-R --slave --no-restore -e 'source("set-up.R")'
 ln -s OpenClimateData/launch.sh ~/launch.sh
