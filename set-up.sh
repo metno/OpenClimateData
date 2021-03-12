@@ -50,4 +50,23 @@ EOF
 R --slave --no-restore -e 'source("set-up.R")'
 ## Let R know where the local R-libraries are
 export R_LIBS=~/Rlibs:$R_LIBS
+## Test the app
 ln -s OpenClimateData/launch.sh ~/launch.sh
+./launch.sh
+## Start the shiny-server
+#/etc/shiny-server/shiny-server.conf
+#location /name_of_the_app {
+#
+#	# Host the shiny app in this directory
+#	app_dir /home/ubuntu/git/esd_Rshiny/path_to_apps_folder;
+#
+#	# Log all shiny output from the app to this directory
+#	log_dir /var/log/shiny-server;
+#  }
+# sudo systemctl restart shiny-server
+## Maintanance:
+# sudo systemctl restart shiny-server
+
+
+
+
