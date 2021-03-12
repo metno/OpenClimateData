@@ -356,7 +356,8 @@ print(Y$location)
 if (sum(is.element(Y$station.id,18700))>0) stid <- 18700 else 
   stid <- Y$station.id[(Y$number.valid == max(Y$number.valid))][1] 
 print(paste('Get first station: station_id=',stid))
-y <- retrieve.station(fnames[ipre],stid=stid,verbose=verbose)
+is <- (1:length(Y$station.id))[is.element(Y$station.id,stid)]
+y <- retrieve.station(fnames[ipre],is=is,verbose=verbose)
 print(loc(y))
 #y <- retrieve.station(fnames[1],stid=Y$station.id[Y$location=="De bilt"],verbose=verbose)
 
