@@ -52,6 +52,7 @@ R --slave --no-restore -e 'source("set-up.R")'
 export R_LIBS=~/Rlibs:$R_LIBS
 ## Test the app
 ln -s OpenClimateData/launch.sh ~/launch.sh
+sudo cp OpenClimateData/shiny-server.conf /etc/shiny-server/shiny-server.conf
 ./launch.sh
 ## Start the shiny-server
 #/etc/shiny-server/shiny-server.conf
