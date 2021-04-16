@@ -36,6 +36,9 @@ sudo su - -c "R -e \"install.packages('devtools',repos='https://cran.rstudio.com
 sudo su - -c "R -e \"install.packages('shinydashboard',repos='https://cran.rstudio.com/')\""
 sudo su - -c "R -e \"install.packages('leaflet',repos='https://cran.rstudio.com/')\""
 sudo su - -c "R -e \"install.packages('plotly',repos='https://cran.rstudio.com/')\""
+sudo su - -c "R -e \"install.packages('rmarkdown',repos='https://cran.rstudio.com/')\""
+sudo su - -c "R -e \"install.packages('zoo',repos='https://cran.rstudio.com/')\""
+sudo su - -c "R -e \"install.packages('ncdf4',repos='https://cran.rstudio.com/')\""
 mkdir Rlibs
 
 ## Install needed R-packages:
@@ -43,7 +46,7 @@ cat > set-up.R << EOF
   ## This line does not work well on a VM
   ##install.packages(c('devtools','shiny','shinydashboard','leaflet','plotly'),repos='http://cran.uib.no')
   library(devtools)
-  install_github('metno/esd',lib='~/Rlibs')
+  install_github('metno/esd')
 EOF
 
 ## Launch the app:
