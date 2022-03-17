@@ -1,6 +1,5 @@
 ## See comments and explanations in global.R
-## Rasmus Benestad
-
+## @RasmusBenestad
 
 # Load the ggplot2 package which provides
 # the 'mpg' dataset.
@@ -58,12 +57,13 @@ server <- function(input, output, session) {
     varids <- updatevarids()
     statistic <- vals()
     ci <- updateci()
-    #print('varids:');print(varids); print('ci:');print(ci)
+    print('varids:');print(varids); print('ci:');print(ci)
     ## For new data source reset the initial choice to precipitation
     prec <- ci[is.element(varids,'precip')]
+    if (length(prec)==0) prec <- 1
     if (is.na(prec)) prec <- 1   ## "Safety option"
     filter <- rep(TRUE,length(statistic))
-    #print(paste("ci=",paste(names(ci),'[',ci,']',sep='',collapse=", "),"prec=",prec))
+    print(paste("ci=",paste(names(ci),'[',ci,']',sep='',collapse=", "),"prec=",prec))
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=prec)
   })
   
@@ -92,19 +92,22 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="tscale",choices=tscales,selected=input$tscale)
     
     ci <- updateci()
+    print(ci)
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=input$ci)
     
-    names(src) <- regions[as.numeric(input$lingo),match(src,source.regions)]
-    #print(src)
+    names.src <- regions[as.numeric(input$lingo),match(src,source.regions)]
+    names.src[is.na(names.src)] <- src[is.na(names.src)]
+    names(src) <- names.src
+    print(src)
     updateSelectInput(session=session,inputId="src",choices=src,selected=input$src)
     
     names(stattype) <- type2name(stattype,input$lingo,types)
-    #print(stattype)
+    print(stattype)
     updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
     
     names(timespace) <- timespacenames[as.numeric(input$lingo),]
     updateSelectInput(session=session,inputId="timespace",choices=timespace,selected=input$timespace)
-    #print('---lingo---')
+    print('---lingo---')
   })
   
   ## Change the time scale for the time series box
@@ -132,9 +135,9 @@ server <- function(input, output, session) {
   observe({
     print('<08 observe - Update location')
     Y <- updatemetadata()
-    loc1 <- switch(input$src,'metnod'='Oslo - blindern','ecad'='De bilt','ghcnd'=Y$location[1])
-    #print(paste('New default location:',loc1))
-    sel <- is.element(locations(),loc1)
+    loc1 <- switch(input$src,'metnod'='Oslo - blindern','ecad'='De bilt','ghcnd'=Y$location[1],'eustance'='Oslo blindern')
+    sel <- is.element(tolower(locations()),tolower(loc1))
+    print(paste('New default location:',loc1,' sum(sel)=',sum(sel)))
     if (sum(sel)==0) print(locations()) else
       print(paste(locations()[sel][1],'from',length(locations()),'sites'))
     updateSelectInput(session=session,inputId="location", choices = locations(), selected=loc1)
@@ -176,6 +179,7 @@ server <- function(input, output, session) {
     ii <- as.numeric(input$ci)
     ## The next lines is  fudge to avoid crash if input$ci is not properly updated
     if (ii > length(varids)) ii <- (1:length(varid))[is.element(varids,'precip')]
+    if (length(ii)==0) ii <- 1
     if (!is.finite(ii)) ii <- 1
     if (varids[ii]=='precip') {
       aspects <- aspectsP
@@ -211,7 +215,7 @@ server <- function(input, output, session) {
     fnames <- fnames[grep(src[match(input$src,src)],fnames)]
     varids <- substr(fnames,6,nchar(fnames))
     varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-    names(varids) <- vari2name(varids,names=varnames[as.numeric(input$lingo),])
+    names(varids) <- vari2name(varids,vnames=varnames[as.numeric(input$lingo),])
     return(varids)
   })
   
@@ -227,20 +231,22 @@ server <- function(input, output, session) {
   
   ## The following expression utdaptes file names in the list of available names, given the region.
   updatefile <- reactive({
-    print('<14: reactive - updatefile()')
+    print(paste('<14: reactive - updatefile() - input$ci=',input$ci))
     fnames <- updatefilenames()
     ## The climate indicators (files) are not listed in the same order since the
     ## list is 'translated' into a more reader-friendly list
     varids <- updatevarids()
+    print(varids); print(fnames)
     ii <- as.numeric(input$ci)
     ## If the climate index is not updated, try to chose the right climate index
     if (ii > length(fnames)) {
       #print('ii is outside range of index')
       varids <- updatevarids()
       ii <- (1:length(varids))[is.element(varids,'precip')]
-    }
+    } 
+    if (length(ii)==0) ii <- 1
     if (!is.finite(ii)) ii <- 1
-    #print(paste('Selected file number',ii,': ',fnames[ii]))
+    print(paste('Selected file number',ii,': ',fnames[ii]))
     return(fnames[ii])
   })
   
@@ -280,7 +286,11 @@ server <- function(input, output, session) {
   updateci <- reactive({
     print('<17: reactive - updateci()')
     varids <- updatevarids()
-    ci <- 1:length(varids); names(ci) <- names(varids)
+    ci <- 1:length(varids); names.ci <- names(varids)
+    ## In case the vairable is missing in our list
+    names.ci[is.na(names.ci)] <- toupper(varids[is.na(names.ci)])
+    print(names.ci)
+    names(ci) <- names.ci
     return(ci)
   })
   
@@ -377,14 +387,15 @@ server <- function(input, output, session) {
   
   locations <- reactive({
     Y <- updatemetadata()
-    return(Y$location)
+    ## Return with stripped trailing white spaces
+    return(trimws(Y$location))
   })
   
   ## The following are more general ractive expressions
   zoom <- reactive({
     print('<20: reactive - zoom()')
     zoomscale <- switch(input$src,
-                        'metnod'=6,'ecad'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,'Africa'=3,'USA'=3,'Australia'=4,
+                        'metnod'=5,'ecad'=4,'eustance'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,'Africa'=3,'USA'=3,'Australia'=4,
                         'INAM'=6,'CLARIS'=6)
     return(zoomscale)
   })
@@ -451,7 +462,7 @@ server <- function(input, output, session) {
     if (tolower(input$statistic)=='sigma2') Z[Z > 20000] <- NA
     Z[Z <= -99] <- NA
     Z <- round(Z,3)
-    #print(paste('+++ Values returned by vals(): n=',length(Z),'range= [',min(Z,na.rm=TRUE),max(Z,na.rm=TRUE),'] +++'))
+    print(paste('+++ Values returned by vals(): n=',length(Z),'range= [',min(Z,na.rm=TRUE),max(Z,na.rm=TRUE),'] +++'))
     return(Z) 
   })
   
@@ -514,6 +525,11 @@ server <- function(input, output, session) {
     Y <- updatemetadata()
     vids <- updatevarids()
     statistic <- vals()
+    ok <- is.finite(statistic)
+    statistic <- statistic[ok]
+    print(length(statistic))
+    Y <- Y[ok,]
+    print(dim(Y))
     
     #print('Stastistic shown on map');print(summary(statistic))
     
@@ -576,13 +592,14 @@ server <- function(input, output, session) {
     if((input$statistic=="trend_wetfreq") | (input$statistic=="trend_wetmean") |
        (input$statistic=="wetfreq") | (input$statistic=="wetmean")) reverse <- TRUE
     #print(paste('Reverse palette =',reverse)); print(summary(statistic))
-    #print(c(sum(filter),length(filter),length(statistic)))
+    print(c(sum(filter),length(filter),length(statistic))); print(summary(statistic))
     pal <- colorBin(colscal(pal = 't2m',n=10),
                     seq(input$statisticrange[1],input$statisticrange[2],length=10),bins = 10,pretty = TRUE,reverse=reverse)    
     
     ## Only show good data
-    good <- is.finite(Y$longitude) & is.finite(Y$latitude)
+    good <- is.finite(Y$longitude) & is.finite(Y$latitude) & is.finite(statistic)
     Y <- Y[good,]; statistic <- statistic[good]; filter <- filter[good]
+    print('Check statistics and pallette'); str(statistic[filter]); str(pal(statistic[filter]))
     
     ## Mark the selected location
     is <- which(tolower(Y$location[filter]) == tolower(input$location))[1]
@@ -594,8 +611,14 @@ server <- function(input, output, session) {
     #             'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
     #             input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
     # print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
-      print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
-                Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is]))
+      # print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
+      #           Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is],
+      #           'n=',length(statistic[filter]),' good=',sum(good)))
+      # str(Y$longitude[filter]); str(Y$latitude[filter])
+      # print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
+      # str(radius); 
+    str(Y$station.id[filter])
+
     
     leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
@@ -725,6 +748,13 @@ server <- function(input, output, session) {
       #print('Plot the data matrix - vis(y)')
       z <- vis(y,plot=FALSE)
       p <- plot_ly(x=attr(z,'x'),y=attr(z,'y'), z = t(z), type = "heatmap")
+    } else  if (input$timespace=='Trends') {
+      print('Monthly trends')
+      trendstats <- monthtrends(y0)
+      type='box'
+      TC <- plot_ly(trendstats,x=~month,y=~trend,name='monthly_trends',type=type,size=10)  %>% 
+        layout(yaxis=list(title=paste0(esd::unit(y),'/decade')),
+               xaxis=list(title='Calendar month'))
     } else if (substr(input$timespace,1,12) != 'Annual_cycle') {
       fit <- density(yH[is.finite(yH)])
       #breaks <- seq(floor(min(yH,na.rm=TRUE)),ceiling(max(yH,na.rm=TRUE)),length=100)
@@ -920,7 +950,9 @@ server <- function(input, output, session) {
     paste(descrlab[as.numeric(input$lingo)],explainmapstatistic(input$statistic,input$lingo,types))})
   output$datainterval <- renderText({
     Y <- updatemetadata()
-    #print('output$datainterval'); print(paste('Source',input$src))
+    print('output$datainterval'); print(paste('Source:',input$src))
+    print(paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
+                 attr(Y,'period')[1],' - ',attr(Y,'period')[2]))
     paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
           attr(Y,'period')[1],' - ',attr(Y,'period')[2])})
   output$cntr <- renderText({
@@ -952,12 +984,12 @@ server <- function(input, output, session) {
       yH <- coredata(y) 
     } else yH <- statistic
     syH <- summary(yH)[c(1,4,6)]
-    if (substr(input$timespace,1,12) != 'Annual_cycle') {
+    if ( (substr(input$timespace,1,12) != 'Annual_cycle') & (substr(input$timespace,1,6) != 'Trends') ) {
       if (input$timespace=='Histogram_map') 
         hsum <- paste('Data= ',input$statistic,' ', attr(Y,'longname'),': ',paste(names(syH),round(syH,1),collapse=', ',sep='='),sep='') else
           hsum <- paste(syH,collapse=', ',sep='=')
     } else {
-      hsum <- paste(attr(y,'longname'),'period=',paste(range(index(y)),collapse='-'))
+      hsum <- paste0(attr(y,'longname'),': period=',paste(range(index(y)),collapse='-'))
     }
     print(input$timespace); print(timespace); print(match(input$timespace,timespace))
     hdescr <- timespacedescr[as.numeric(input$lingo),match(input$timespace,timespace)]

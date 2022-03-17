@@ -121,6 +121,7 @@ explainmapstatistic <- function(stattype,lingo,types) {
   #print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
   descr <- description[match(tolower(stattype),tolower(types))]
+  print('...')
   return(descr)
 }
 
@@ -160,23 +161,40 @@ getstattype <- function(fname,lingo=NULL) {
 
 ## Plain text description of the statistics presented on the climate indicators for ordinary people.
 vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
-                               'cc','ss','pp','fg','fx','sd','dd','qq'),
-                      names=c('Precipitation','Daily mean temperature',
+                               'cc','ss','pp','fg','fx','sd','dd','qq','hu'),
+                      vnames=c('Precipitation','Daily mean temperature',
                               'Daily max temperature','Daily min temperature',
-                              'Cloud cover','Sunshine','Pressure','Wind speed',
-                              'Wind gust','Snow depth','Wind direction','Global Radiation'),nc=3) {
+                              'Cloud cover','Sunshine','Sea-level pressure','Wind speed',
+                              'Max wind gust','Snow depth','Wind direction',
+                              'Global Radiation','Humidity'),nc=3) {
   print('<C: vari2name')
   y <- x
-  if (length(vars) != length(names)) stop("vars have different length to names in 'variname'")
+  if (length(vars) != length(vnames)) stop("vars have different length to vnames in 'variname'")
   for (i in 1:length(x)) {
     pattern <- tolower(substr(x[i],1,nc))
-    #print(pattern)
+    #print(pattern);print(nc)
     ii <- grep(pattern = pattern,substr(vars,1,nc))
-    if (length(ii)>0) y[i] <- names[ii]
+    if (length(ii)>0) y[i] <- vnames[ii]
   }
+  print(y)
   return(y)
 }
 
+monthtrends <- function(x,FUN=NULL) {
+  print('monthtrends:')
+  if (is.null(FUN)) 
+    if (is.precip(x)) FUN='sum' else FUN='mean'
+  y <- rep(NA,12); dy <- y; p <- y
+  for (i in 1:12) {
+    z <- subset(as.monthly(x,FUN=FUN),it=month.abb[i])
+    y[i] <- trend(z,result='coef')
+    dy[i] <- trend(z,result='err')
+    p[i] <- trend(z,result='pval')
+  }
+  Y <- data.frame(trend=c(y,y-dy,y+dy),pval=rep(p,3),month=rep(1:12,3))
+  print(Y)
+  return(Y)
+}
 
 ## The start-up settings - global variables etc used in the UI and server. Supports several languages
 print('--- <Initial settings> ---')
@@ -193,6 +211,7 @@ src <- fnames
 for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
 src <- rownames(table(src))
 print(src)
+## Start with data from Met Norway or the first in alphabetic order in not found.
 if (length(src) > 1) { 
   reg1 <- (1:length(src))[is.element(src,'metnod')]                          ## Default source of dataset/region
   fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
@@ -220,13 +239,16 @@ names(r_colors) <- colors()
 ## Data sources - representing different regions
 #src <- c('metnod','ecad','Asia','Pacific')
 
-## The labelling of the data sources in the menu
-regions <- rbind(c('Norge','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
-                 c('Noreg','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
-                 c('Norway','Eurasia','Asia','The Pacific','Africa','Latin-America','Australia','North America','Mozambique','Argentinia'))
-source.regions <- c('metnod','ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA','INAM','CLARIS')
+## The labeling of the data sources in the menu
+regions <- rbind(c('Norge','Europa','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
+                 c('Noreg','Europa','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
+                 c('Norway','Europe','Eurasia','Asia','The Pacific','Africa','Latin-America','Australia','North America','Mozambique','Argentinia'))
+source.regions <- c('metnod','eustance','ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA','INAM','CLARIS')
 
-names(src) <- regions[1,match(src,source.regions)]
+names.src <- regions[1,match(src,source.regions)]
+## If not in the list, use part of the file neams as region identifier.
+names.src[is.na(names.src)] <- toupper(src[is.na(names.src)])
+names(src) <- names.src
 descrlab <- c('Forklaring:','Forklaring:','Description:')
 decade <- c('tiår','tiår','decade')
 degree <- c('grader','grader','degrees')
@@ -241,6 +263,9 @@ sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner 
                   c('Åpne data fra European Climate and Assessment Dataset, Non-blended (ECA&D). Kilde: https://www.ecad.eu/',
                     'Åpne data fra European Climate and Assessment Dataset, Non-blended (ECA&D). Kilde: https://www.ecad.eu/',
                     'Open climate data from Climate and Assessment Dataset, Non-blended (ECA&D). Source: https://www.ecad.eu/'),
+                  c('Åpne data fra EUSTANCE. Kilde: https://www.ecad.eu/',
+                    'Åpne data fra EUSTANCE. Kilde: https://www.ecad.eu/',
+                    'Open climate data from EUSTANCE. Source: https://www.ecad.eu/'),
                   c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
                     'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
                     'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
@@ -279,19 +304,22 @@ seaTS <- c('All year'='all','Dec-Feb'='DJF',
 #thresholds <- seq(10,50,by=10)
 
 timespace <- c('Annual_cycle_month','Annual_cycle_day','Annual_cycle_cumugram','Data_matrix',
-               'Histogram_location','Histogram_map')
+               'Histogram_location','Histogram_map','Trends')
 timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk','Oppsummert år','Dag og år',
-                          'Stedsstatistikk','Alle stedene'),
+                          'Stedsstatistikk','Alle stedene','Endringer'),
                         c('Månedstatistikk','Døgnstatistikk','Oppsummert år','Dag og år',
-                          'Stedsstatistikk','Alle stadane'),
+                          'Stedsstatistikk','Alle stadane','Trendar'),
                         c('Monthly statistics','Daily statistics','Cumulated daily','Year and day',
-                          'Histogram','Spatial statstics'))
+                          'Histogram','Spatial statstics','Monthly trends'))
 timespacedescr <- rbind(c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
-                          'Dager oppsummert','Dag og år','Histogram for','Statistikk for steder vist på kartet'),
+                          'Dager oppsummert','Dag og år','Histogram for','Statistikk for steder vist på kartet',
+                          'Estimert endring/trend for hver av de 12 månedene'),
                         c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
-                          'Dagar oppsummert','Dag og år','Histogram for','Statistikk for stadar vist på kartet'),
+                          'Dagar oppsummert','Dag og år','Histogram for','Statistikk for stadar vist på kartet',
+                          'Estimert endring/trend for kvar av dei 12 månedane'),
                         c('Annual cycle (monthly) for','Annual cycle (daily) for',
-                          'Days accumulated','Day and year','Histogram for','Histogram for the locations shown in map'))
+                          'Days accumulated','Day and year','Histogram for','Histogram for the locations shown in map',
+                          'Estimated trends for each of the 12 calendar months'))
 
 names(timespace) <- timespacenames[1,]
 
@@ -327,13 +355,13 @@ aspectnameT <- rbind(c("Målt","Avvik fra normalen","Antall dager","Dager over n
                      c("Measured","Anomaly","Number of days","Days above normal"))
 varnames=rbind(c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur',
                  'Skydekke','Soltimer','Trykk','Vindhastighet',
-                 'Maks vindhastighet','Snødybde','Vindretning','Stråling'),
+                 'Maks vindhastighet','Snødybde','Vindretning','Stråling','Luftfuktighet'),
                c('Nedbør','Middeltemperatur','Maksimumstemperatur','Minimumstemperatur',
                  'Skydekke','Soltimar','Trykk','Vindhastighet',
-                 'Maks vindhastighet','Snødybde','Vindretning','Stråling'),
+                 'Maks vindhastighet','Snødybde','Vindretning','Stråling','Luftfuktighet'),
                c('Precipitation','Daily mean temperature','Daily max temperature','Daily min temperature',
                  'Cloud cover','Sunshine','Pressure','Wind speed',
-                 'Wind gust','Snow depth','Wind direction','Global radiation'))
+                 'Wind gust','Snow depth','Wind direction','Global radiation','Air humidity'))
 timescales <- rbind(c('Dag','Måned','Sesong','År'),
                     c('Dag','Måned','Sesong','År'),
                     c('Day','Month','Season','Year'))
@@ -367,7 +395,7 @@ statisticmax <- round(max(Y$mean,na.rm=TRUE))
 
 cntrs <- c('All',rownames(table(Y$country)))
 
-## The variable 'filter' is used for zoomin in on the data based on their range of values
+## The variable 'filter' is used for zooming in on the data based on their range of values
 filter <- rep(TRUE,length(Y$station.id))
 
 print('--- <Settings OK> ---')
