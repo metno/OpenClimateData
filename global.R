@@ -214,6 +214,7 @@ print(src)
 ## Start with data from Met Norway or the first in alphabetic order in not found.
 if (length(src) > 1) { 
   reg1 <- (1:length(src))[is.element(src,'metnod')]                          ## Default source of dataset/region
+  if (is.na(reg1)) reg1 <- 1
   fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
   fnames <- fnames[grep(src[reg1],fnames)]
 } else reg1 <- 1
