@@ -619,7 +619,6 @@ server <- function(input, output, session) {
       # str(radius); 
     str(Y$station.id[filter])
 
-    
     leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
                        lat = Y$latitude[filter],fill = TRUE, # latitude
