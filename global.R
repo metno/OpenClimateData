@@ -305,22 +305,25 @@ seaTS <- c('All year'='all','Dec-Feb'='DJF',
 #thresholds <- seq(10,50,by=10)
 
 timespace <- c('Annual_cycle_month','Annual_cycle_day','Annual_cycle_cumugram','Data_matrix',
-               'Histogram_location','Histogram_map','Trends')
+               'Histogram_location','Histogram_map','Trends','IDF')
 timespacenames <- rbind(c('Månedstatistikk','Døgnstatistikk','Oppsummert år','Dag og år',
-                          'Stedsstatistikk','Alle stedene','Endringer'),
+                          'Stedsstatistikk','Alle stedene','Endringer','IVF'),
                         c('Månedstatistikk','Døgnstatistikk','Oppsummert år','Dag og år',
-                          'Stedsstatistikk','Alle stadane','Trendar'),
+                          'Stedsstatistikk','Alle stadane','Trendar','IVF'),
                         c('Monthly statistics','Daily statistics','Cumulated daily','Year and day',
-                          'Histogram','Spatial statstics','Monthly trends'))
+                          'Histogram','Spatial statstics','Monthly trends','IDFs'))
 timespacedescr <- rbind(c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
                           'Dager oppsummert','Dag og år','Histogram for','Statistikk for steder vist på kartet',
-                          'Estimert endring/trend for hver av de 12 månedene'),
+                          'Estimert endring/trend for hver av de 12 månedene',
+                          'Tilnærmet intensitet-varighet-frekvens-analyse for'),
                         c('Sesongvariasjon på månedsbasis for','Sesongvariasjon på dagsbasis for',
                           'Dagar oppsummert','Dag og år','Histogram for','Statistikk for stadar vist på kartet',
-                          'Estimert endring/trend for kvar av dei 12 månedane'),
+                          'Estimert endring/trend for kvar av dei 12 månedane',
+                          'Tilnærma intensitet-varighet-frekvens analyse for'),
                         c('Annual cycle (monthly) for','Annual cycle (daily) for',
                           'Days accumulated','Day and year','Histogram for','Histogram for the locations shown in map',
-                          'Estimated trends for each of the 12 calendar months'))
+                          'Estimated trends for each of the 12 calendar months',
+                          'Approximated intensity-duration-frequency analysis for'))
 
 names(timespace) <- timespacenames[1,]
 

@@ -754,6 +754,27 @@ server <- function(input, output, session) {
       TC <- plot_ly(trendstats,x=~month,y=~trend,name='monthly_trends',type=type,size=10)  %>% 
         layout(yaxis=list(title=paste0(esd::unit(y),'/decade')),
                xaxis=list(title='Calendar month'))
+    } else if (input$timespace=='IDF') {
+      print('IDF')
+      y <- updatestation()
+      idf <- IDF(y,plot=FALSE)
+      str(idf)
+      rownames(idf) <-attr(idf,'L'); duration <- rownames(idf)
+      colnames(idf) <-attr(idf,'tau'); rperiod <- colnames(idf)
+      curve <- data.frame(as.matrix(idf)); curve$duration <- as.numeric(duration)
+      print(curve)
+      idf <- plot_ly(curve,name='IDF',type='scatter',mode='markers', showlegend = TRUE) 
+      print(dim(curve$idf))
+      for (i in 1:length(rperiod)) {
+        cl <- paste("idf <- idf %>% add_lines(data=curve,y = ~X",rperiod[i],", x = ~duration,",
+                    "type = 'scatter', mode = 'markers', line = list(width = 2,shape ='spline'),name ='X",
+                    rperiod[i],"')",sep = '')
+        print(cl)
+        eval(parse(text=cl))
+      }
+      print('Produce the IDF plot')
+      idf <- idf %>%
+        layout(yaxis=list(title=esd::unit(y)[1]),xaxis=list(title='Duration (hr)'))
     } else if (substr(input$timespace,1,12) != 'Annual_cycle') {
       fit <- density(yH[is.finite(yH)])
       #breaks <- seq(floor(min(yH,na.rm=TRUE)),ceiling(max(yH,na.rm=TRUE)),length=100)
