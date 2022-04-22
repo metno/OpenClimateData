@@ -110,10 +110,14 @@ ui <- dashboardPage(
         ),
         tabPanel(title=uiOutput("etitle"),fluidPage(
           fluidRow(plotlyOutput("scatterplot", height = 500,width = '100%')),
-          fluidRow(column(3,selectInput("x_variable", "X", choices= stattype,selected = "mean")),
-                   column(3,selectInput("y_variable", "Y", choices= stattype,selected = "trend")),
-                   column(3,selectInput("xy_col", "Colouring", choices= c('Red',stattype),selected = "altitude")),
-                   column(3,selectInput("xy_size", "Marker size", choices= c('Uniform',stattype),selected = "number.valid"))
+          fluidRow(column(3,selectInput("x_variable", "X",
+                                        choices= stattype,selected = "mean")),
+                   column(3,selectInput("y_variable", "Y",
+                                        choices= stattype,selected = "trend")),
+                   column(3,selectInput("xy_col", "Colouring",  
+                                        choices= c('Red',stattype),selected = "altitude")),
+                   column(3,selectInput("xy_size", "Marker size", 
+                                        choices= c('Uniform',stattype),selected = "number.valid"))
           ))
         ),
         tabPanel(title=uiOutput("cftitle"),fluidPage(
@@ -140,6 +144,13 @@ ui <- dashboardPage(
                    tags$p("The data from the Norwegian Meteorological Institute are available from ",
                           tags$a(href="http://thredds.met.no/thredds/catalog/metusers/rasmusb/catalog.html",
                                  "http://thredds.met.no/thredds/catalog/metusers/rasmusb/catalog.html")),
+                   tags$br(),
+                   tags$h1("Precipitation statistics"),
+                   tags$p("The statistics presented on precipitation (e.g. variance, return-value) are crude estiamtes based on",
+                          tags$a(href="https://doi.org/10.1088/1748-9326/ab2bb2",
+                                 "Benestad et al. (2019; DOI:10.1088/1748-9326/ab2bb2)")," and the IDF estimates are based on",
+                          tags$a(href="https://iopscience.iop.org/article/10.1088/1748-9326/abd4ab",
+                                 "Benestad et al. (2021; DOI:10.1088/1748-9326/abd4ab)")," which are two open-access papers"),
                    tags$br(),
                    tags$h1("Help, tips and assistance"),
                    tags$p("We have used a wiki-page to",

@@ -191,7 +191,7 @@ monthtrends <- function(x,FUN=NULL) {
     dy[i] <- trend(z,result='err')
     p[i] <- trend(z,result='pval')
   }
-  Y <- data.frame(trend=c(y,y-dy,y+dy),pval=rep(p,3),month=rep(1:12,3))
+  Y <- data.frame(trend=cbind(y,y+dy,y-dy),pval=p,month=1:12)
   print(Y)
   return(Y)
 }

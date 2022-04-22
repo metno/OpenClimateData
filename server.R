@@ -92,7 +92,8 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="tscale",choices=tscales,selected=input$tscale)
     
     ci <- updateci()
-    print(ci)
+    varids <- updatevarids()
+    print(ci); print(varids[as.numeric(ci)])
     updateSelectInput(session=session,inputId="ci",choices=ci,selected=input$ci)
     
     names.src <- regions[as.numeric(input$lingo),match(src,source.regions)]
@@ -104,9 +105,19 @@ server <- function(input, output, session) {
     names(stattype) <- type2name(stattype,input$lingo,types)
     print(stattype)
     updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
+    updateSelectInput(session=session,inputId="x_variable",choices=stattype,selected=input$statistic)
+    updateSelectInput(session=session,inputId="y_variable",choices=stattype,selected=input$statistic)
+    updateSelectInput(session=session,inputId="xy_col",choices=stattype,selected="mean")
+    updateSelectInput(session=session,inputId="xy_size",choices=stattype,selected="trend")
     
     names(timespace) <- timespacenames[as.numeric(input$lingo),]
+    print(varids[as.numeric(input$ci)])
+    if (varids[as.numeric(input$ci)] != 'precip') timespaces <- timespace[-grep('IDF',timespace,ignore.case=TRUE)] else
+      timespaces <- timespace
+    print(timespaces)
     updateSelectInput(session=session,inputId="timespace",choices=timespace,selected=input$timespace)
+    
+    
     print('---lingo---')
   })
   
@@ -175,13 +186,14 @@ server <- function(input, output, session) {
   # Update the list of aspects in the past weather box:
   observe({
     print(paste('<10: observe - Update aspects: input$ci=',input$ci,'input$lingo=',input$lingo))
+    print(varids)
     #REB2020-11-05*** varids <- updatevarids()
     ii <- as.numeric(input$ci)
     ## The next lines is  fudge to avoid crash if input$ci is not properly updated
     if (ii > length(varids)) ii <- (1:length(varid))[is.element(varids,'precip')]
     if (length(ii)==0) ii <- 1
     if (!is.finite(ii)) ii <- 1
-    if (varids[ii]=='precip') {
+    if (is.precip(y)) {
       aspects <- aspectsP
       names(aspects) <- aspectnameP[as.numeric(input$lingo),]
     } else {
@@ -750,8 +762,13 @@ server <- function(input, output, session) {
     } else  if (input$timespace=='Trends') {
       print('Monthly trends')
       trendstats <- monthtrends(y0)
-      type='box'
-      TC <- plot_ly(trendstats,x=~month,y=~trend,name='monthly_trends',type=type,size=10)  %>% 
+      print(str(trendstats))
+      TC <- plot_ly(trendstats,x=~month,y=~trend.y,name='monthly_trends',type='scatter',mode='markers', 
+                    line = list(width = 2,shape ='spline'))  %>% 
+        add_lines(data=trendstats,x=~month,y=~trend.V2,name='upper-bound',type='scatter',mode='lines',
+                  line=list(width = 2, dash = 'dash')) %>%
+        add_lines(data=trendstats,x=~month,y=~trend.V3,name='lower-bound',type='scatter',mode='lines',
+                  line=list(width = 2, dash = 'dash')) %>%
         layout(yaxis=list(title=paste0(esd::unit(y),'/decade')),
                xaxis=list(title='Calendar month'))
     } else if (input$timespace=='IDF') {
@@ -868,6 +885,7 @@ server <- function(input, output, session) {
     print('<27: output$scatterplot - render')
     statistic <- vals()
     Y <- updatemetadata()
+    y <- updatestation()
     n <- dim(Y)[1]
     #print(n)
     if (input$xy_col=="Red") {
@@ -1003,14 +1021,15 @@ server <- function(input, output, session) {
     if (input$timespace == 'Histogram_location') {
       yH <- coredata(y) 
     } else yH <- statistic
-    syH <- summary(yH)[c(1,4,6)]
+    syH <- round(summary(yH)[c(1,4,6)],1)
     if ( (substr(input$timespace,1,12) != 'Annual_cycle') & (substr(input$timespace,1,6) != 'Trends') ) {
       if (input$timespace=='Histogram_map') 
-        hsum <- paste('Data= ',input$statistic,' ', attr(Y,'longname'),': ',paste(names(syH),round(syH,1),collapse=', ',sep='='),sep='') else
+        hsum <- paste('Data= ',input$statistic,' ', attr(Y,'longname'),': ',paste(names(syH),syH,collapse=', ',sep='='),sep='') 
+      else if (input$timespace=='IDF') { 
+        hsum <- "Based on DOI:10.1088/1748-9326/abd4ab (ref. the app infotab)"
+      } else
           hsum <- paste(syH,collapse=', ',sep='=')
-    } else {
-      hsum <- paste0(attr(y,'longname'),': period=',paste(range(index(y)),collapse='-'))
-    }
+    }  else hsum <- paste0(attr(y,'longname'),': period=',paste(range(index(y)),collapse='-'))
     print(input$timespace); print(timespace); print(match(input$timespace,timespace))
     hdescr <- timespacedescr[as.numeric(input$lingo),match(input$timespace,timespace)]
     if (input$timespace != 'Histogram_map') hdescr <- paste(hdescr,esd::loc(y),'in',esd::cntr(y)[1])
