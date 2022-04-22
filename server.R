@@ -105,10 +105,10 @@ server <- function(input, output, session) {
     names(stattype) <- type2name(stattype,input$lingo,types)
     print(stattype)
     updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
-    updateSelectInput(session=session,inputId="x_variable",choices=stattype,selected=input$statistic)
-    updateSelectInput(session=session,inputId="y_variable",choices=stattype,selected=input$statistic)
-    updateSelectInput(session=session,inputId="xy_col",choices=stattype,selected="mean")
-    updateSelectInput(session=session,inputId="xy_size",choices=stattype,selected="trend")
+    updateSelectInput(session=session,inputId="x_variable",choices=stattype,selected='mean')
+    updateSelectInput(session=session,inputId="y_variable",choices=stattype,selected='trend')
+    updateSelectInput(session=session,inputId="xy_col",choices=stattype,selected='altitude')
+    updateSelectInput(session=session,inputId="xy_size",choices=stattype,selected='number.valid')
     
     names(timespace) <- timespacenames[as.numeric(input$lingo),]
     print(varids[as.numeric(input$ci)])
