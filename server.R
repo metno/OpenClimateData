@@ -102,7 +102,8 @@ server <- function(input, output, session) {
     print(src)
     updateSelectInput(session=session,inputId="src",choices=src,selected=input$src)
     
-    names(stattype) <- type2name(stattype,input$lingo,types)
+    stattype <- getstattype(updatefile(),lingo=input$lingo)
+    #names(stattype) <- type2name(stattype,input$lingo,types)
     print(stattype)
     updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
     updateSelectInput(session=session,inputId="x_variable",choices=stattype,selected='mean')
@@ -115,9 +116,7 @@ server <- function(input, output, session) {
     if (varids[as.numeric(input$ci)] != 'precip') timespaces <- timespace[-grep('IDF',timespace,ignore.case=TRUE)] else
       timespaces <- timespace
     print(timespaces)
-    updateSelectInput(session=session,inputId="timespace",choices=timespace,selected=input$timespace)
-    
-    
+    updateSelectInput(session=session,inputId="timespace",choices=timespaces,selected=input$timespace)
     print('---lingo---')
   })
   
@@ -127,8 +126,8 @@ server <- function(input, output, session) {
     if (input$tscale=='year') newseaTS <- seaTS[1] else
       if (input$tscale=='season') newseaTS <- seaTS[1:5] else newseaTS <- seaTS
       
-    updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
-    #print('---tscale---')
+      updateSelectInput(session=session,inputId="seasonTS",choices=newseaTS)
+      #print('---tscale---')
   })
   
   ## Observe ---------------------------------------------------------------------------------------------------------
@@ -138,8 +137,26 @@ server <- function(input, output, session) {
   ## Update the list of available statistics in the drop-down menues:
   observe({
     print('<07: observe - Update statistics')
-    updateSelectInput(session=session,inputId="statistic",
-                      choices=getstattype(updatefile(),lingo=input$lingo),selected="mean")
+    ci <- updateci()
+    varids <- updatevarids()
+    stattype <- getstattype(updatefile(),lingo=input$lingo)
+    print(ci); print(varids[as.numeric(ci)])
+    if (!is.na(varids[as.numeric(input$ci)])) { 
+      updateSelectInput(session=session,inputId="statistic",choices=stattype,selected="mean")
+      updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
+      updateSelectInput(session=session,inputId="x_variable",choices=stattype,selected='mean')
+      updateSelectInput(session=session,inputId="y_variable",choices=stattype,selected='trend')
+      updateSelectInput(session=session,inputId="xy_col",choices=stattype,selected='altitude')
+      updateSelectInput(session=session,inputId="xy_size",choices=stattype,selected='number.valid')
+      
+      names(timespace) <- timespacenames[as.numeric(input$lingo),]
+      print(varids[as.numeric(input$ci)])
+      if (varids[as.numeric(input$ci)] != 'precip') timespaces <- timespace[-grep('IDF',timespace,ignore.case=TRUE)] else
+        timespaces <- timespace
+      print(timespaces)
+      updateSelectInput(session=session,inputId="timespace",choices=timespaces,selected=input$timespace)
+    }
+    print('--- variable type ---')
   })
   
   ## Update the list of locations in the drop-down menues
@@ -264,13 +281,15 @@ server <- function(input, output, session) {
   
   getstid <- reactive({
     print('<15: reactive - getstid()')
+    Y <- updatemetadata()
     #fnames <- updatefilenames()
     #print(paste('vals: Y$',input$statistic,sep='')); print(fnames); print(input$ci)
     ## Get summary data from the netCDF file
     iss <- (1:length(locations()))[is.element(toupper(locations()),'DE BILT')]
-    if (length(iss) > 0) is <- iss else
+    if (length(iss) > 0) is <- iss[1] else
       iss <- (1:length(locations()))[is.element(toupper(locations()),'OSLO BLIND')]
-    if (length(iss) > 0) is <- iss else is <- 1
+    if (length(iss) > 0) is <- iss[1] else is <- 1
+    print(Y$station.id[is])
     return(Y$station.id[is])
   })
   
@@ -278,7 +297,7 @@ server <- function(input, output, session) {
     print('<16: reactive - updatemetadata()')
     Y <- retrieve.stationsummary(updatefile())
     ## For duplicated sites, add some small noise in the location coordinates to seperate
-        dup <- duplicated(paste(Y$longitude,Y$latitude))
+    dup <- duplicated(paste(Y$longitude,Y$latitude))
     if (sum(dup)>0) Y$longitude[dup] <- Y$longitude[dup] + 0.0001*rnorm(sum(dup))
     if (sum(dup)>0) Y$latitude[dup] <- Y$latitude[dup] + 0.0001*rnorm(sum(dup))
     ## For duplicated names, add 'II' 
@@ -310,14 +329,17 @@ server <- function(input, output, session) {
   updatestation <- reactive({
     print('<18: reactive - updatestation()')
     Y <- updatemetadata()
+    verbose <- FALSE
     #Y <- retrieve.stationsummary(updatefile()) #REB this line should not be here
     il <- is.element(tolower(Y$location),tolower(input$location))
     if (sum(il)>0) selectedStid <- Y$station.id[il][1] else {
-      print(input$location);print('Something is wrong!')
+      print(input$location);print('Something went wrong!')
       selectedStid <- getstid()
+      if (sum(is.element(Y$station.id,selectedStid))==0) print(Y$station.id)
+      verbose <- TRUE
     }
     print(paste('selectedID: ',selectedStid,' = ',input$location,'from',updatefile(),
-                "  - y <- retrieve.station(",updatefile(),selectedStid,")"))
+                "  - y <- retrieve.station(",updatefile(),", stid=",selectedStid,")"))
     y <- retrieve.station(updatefile(),stid=selectedStid,verbose=verbose)
     ## Update slider
     updateSliderInput(session=session,inputId="itt",value = range(year(y)),
@@ -445,7 +467,7 @@ server <- function(input, output, session) {
                                                              'MAM'=90*(1-pnorm(x0,mean=Y$mean_MAM,sd=Y$sd_MAM)),
                                                              'JJA'=90*(1-pnorm(x0,mean=Y$mean_JJA,sd=Y$sd_JJA)),
                                                              'SON'=90*(1-pnorm(x0,mean=Y$mean_SON,sd=Y$sd_SON))) 
-          Z <- as.numeric(Z)
+                                               Z <- as.numeric(Z)
         } else {
           ## Get a specific date it
           it <- input$it
@@ -579,14 +601,14 @@ server <- function(input, output, session) {
               ## Check if the current day equals the maximum value: if so, then highlight
               if (!is.null(Y$wetmean)) 
                 highlight <- (Z[filter] - Y$max[filter] > -0.001) & is.finite(Z[filter]) else 
-                highlight <- ((Z[filter] - Y$max[filter] > -0.001) | 
-                                    (Z[filter] - Y$min[filter] < +0.001)) & is.finite(Z[filter])
-              #print('RECORDS?')
-              highlight[is.na(highlight)] <- FALSE
-              #print(paste('Number of records on',input$it,'is',sum(highlight,na.rm=TRUE)))
-              #print(paste(Y$location[filter][highlight],Z[filter][highlight]))
-              #print(table(highlight)); print(table(filter))
-              lhighlight <- rep('Record',sum(highlight,nn.rm=TRUE))
+                  highlight <- ((Z[filter] - Y$max[filter] > -0.001) | 
+                                  (Z[filter] - Y$min[filter] < +0.001)) & is.finite(Z[filter])
+                #print('RECORDS?')
+                highlight[is.na(highlight)] <- FALSE
+                #print(paste('Number of records on',input$it,'is',sum(highlight,na.rm=TRUE)))
+                #print(paste(Y$location[filter][highlight],Z[filter][highlight]))
+                #print(table(highlight)); print(table(filter))
+                lhighlight <- rep('Record',sum(highlight,nn.rm=TRUE))
             } 
     
     lon.highlight <- Y$longitude[filter][highlight]
@@ -623,14 +645,14 @@ server <- function(input, output, session) {
     #             'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
     #             input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
     # print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
-      # print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
-      #           Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is],
-      #           'n=',length(statistic[filter]),' good=',sum(good)))
-      # str(Y$longitude[filter]); str(Y$latitude[filter])
-      # print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
-      # str(radius); 
+    # print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
+    #           Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is],
+    #           'n=',length(statistic[filter]),' good=',sum(good)))
+    # str(Y$longitude[filter]); str(Y$latitude[filter])
+    # print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
+    # str(radius); 
     str(Y$station.id[filter])
-
+    
     leaflet("mapid") %>% 
       addCircleMarkers(lng = Y$longitude[filter], # longitude
                        lat = Y$latitude[filter],fill = TRUE, # latitude
@@ -847,7 +869,7 @@ server <- function(input, output, session) {
         clim <- climatology(y)
         if (is.precip(y)) fun <- 'sum' else fun <- 'mean'
         if (input$timespace!='Annual_cycle_cumugram') Z <- diagram(y,plot=FALSE) else 
-                                                      Z <- attr(cumugram(y,FUN=fun,plot=FALSE),'Y')[1:365,]
+          Z <- attr(cumugram(y,FUN=fun,plot=FALSE),'Y')[1:365,]
         ## Check if the years of data include current year
         iyr <- is.element(colnames(Z),format(Sys.Date(),'%Y'))
         #print(paste(sum(iyr),'cases for',format(Sys.Date(),'%Y')))
@@ -860,7 +882,7 @@ server <- function(input, output, session) {
         if (sum(iyr)>0) colorpal[iyr] <- rgb(0,0,0)
         mac <- as.data.frame(cbind(coredata(clim),Z))
         mac$day <- 1:365
-  
+        
         AC <- plot_ly(mac,name='annual_cycle',type='scatter',mode='markers', showlegend = (input$showlegend=='Show')) 
         
         for (i in 1:length(yrs)) {
@@ -990,7 +1012,7 @@ server <- function(input, output, session) {
     Y <- updatemetadata()
     print('output$datainterval'); print(paste('Source:',input$src))
     print(paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
-                 attr(Y,'period')[1],' - ',attr(Y,'period')[2]))
+                attr(Y,'period')[1],' - ',attr(Y,'period')[2]))
     paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
           attr(Y,'period')[1],' - ',attr(Y,'period')[2])})
   output$cntr <- renderText({
@@ -1008,7 +1030,7 @@ server <- function(input, output, session) {
     statistic <- vals()
     ## Apply filter to highlight stations selected in the map
     n <- length(statistic)
-      if (input$country=='All') filter <- rep(TRUE,n) else {
+    if (input$country=='All') filter <- rep(TRUE,n) else {
       filter <- rep(FALSE,n)
       filter[(Y$country == input$country)] <- TRUE
     }
@@ -1028,7 +1050,7 @@ server <- function(input, output, session) {
       else if (input$timespace=='IDF') { 
         hsum <- "Based on DOI:10.1088/1748-9326/abd4ab (ref. the app infotab)"
       } else
-          hsum <- paste(syH,collapse=', ',sep='=')
+        hsum <- paste(syH,collapse=', ',sep='=')
     }  else hsum <- paste0(attr(y,'longname'),': period=',paste(range(index(y)),collapse='-'))
     print(input$timespace); print(timespace); print(match(input$timespace,timespace))
     hdescr <- timespacedescr[as.numeric(input$lingo),match(input$timespace,timespace)]
