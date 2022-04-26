@@ -137,13 +137,12 @@ server <- function(input, output, session) {
   ## Update the list of available statistics in the drop-down menues:
   observe({
     print('<07: observe - Update statistics')
-    ci <- updateci()
-    varids <- updatevarids()
+    #ci <- updateci()
+    #varids <- updatevarids()
     stattype <- getstattype(updatefile(),lingo=input$lingo)
     print(ci); print(varids[as.numeric(ci)])
     if (!is.na(varids[as.numeric(input$ci)])) { 
       updateSelectInput(session=session,inputId="statistic",choices=stattype,selected="mean")
-      updateSelectInput(session=session,inputId="statistic",choices=stattype,selected=input$statistic)
       updateSelectInput(session=session,inputId="x_variable",choices=stattype,selected='mean')
       updateSelectInput(session=session,inputId="y_variable",choices=stattype,selected='trend')
       updateSelectInput(session=session,inputId="xy_col",choices=stattype,selected='altitude')
@@ -229,7 +228,6 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="country",choices=c('All',rownames(table(Y$country))),
                       selected='All')
   })
-  
   
   
   ## Reactive expressions to update information -------------------------------------------------------------- 
@@ -347,15 +345,16 @@ server <- function(input, output, session) {
     return(y)
   })
   
-  
-  
+  ## Get the right time series:
   updatetimeseries <- reactive({
     print('<19: reactive - updatetimeseries()')
     y <- updatestation()
     x0 <- as.numeric(input$x0)
     ## If anomaly
     if (input$aspect=='anomaly') y <- anomaly(y)
-    if (input$seasonTS != 'all') y <- subset(y,it=tolower(input$seasonTS))
+    if (input$seasonTS != 'all') 
+      if (input$seasonTS != 'ONDJFM') y <- subset(y,it=tolower(input$seasonTS)) else
+        if (input$seasonTS == 'ONDJFM') y <- subset(as.OctMar(y))
     
     ## If the data is precipitation
     if (is.precip(y)) {
@@ -373,15 +372,15 @@ server <- function(input, output, session) {
       print('Number of days and not precipitation')
       meanx <- switch(input$tscale,
                       'month'=as.monthly(y,FUN='mean',nmin=25),
-                      'season'=as.4seasons(y,FUN='mean',nmin=80),
+                      'season'=as.seasons(y,FUN='mean',nmin=80),
                       'year'=as.annual(y,FUN='mean',nmin=300))
       sdx <- switch(input$tscale,
                     'month'=as.monthly(y,FUN='sd',nmin=25),
-                    'season'=as.4seasons(y,FUN='sd',nmin=80),
+                    'season'=as.seasons(y,FUN='sd',nmin=80),
                     'year'=as.annual(y,FUN='sd',nmin=300))
       y <- switch(input$tscale,
                   'month'=as.monthly(y,FUN='count',threshold=x0,nmin=25),
-                  'season'=as.4seasons(y,FUN='count',threshold=x0,nmin=80),
+                  'season'=as.seasons(y,FUN='count',threshold=x0,nmin=80),
                   'year'=as.annual(y,FUN='count',threshold=x0,nmin=300))
       nds <- switch(input$tscale,
                     'month'=30,
@@ -419,13 +418,14 @@ server <- function(input, output, session) {
     return(y)
   })
   
+  ## Get the right group of stations
   locations <- reactive({
     Y <- updatemetadata()
     ## Return with stripped trailing white spaces
     return(trimws(Y$location))
   })
   
-  ## The following are more general ractive expressions
+  ## The following are more general reactive expressions
   zoom <- reactive({
     print('<20: reactive - zoom()')
     zoomscale <- switch(input$src,

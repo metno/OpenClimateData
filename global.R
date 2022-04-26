@@ -196,6 +196,13 @@ monthtrends <- function(x,FUN=NULL) {
   return(Y)
 }
 
+## Include the southern Oct-Mar rainy season in the set of seasons 
+as.5seasons <- function(x) {
+  rainyseason <- as.OctMar(x)
+  northseasons <- as.4seasons(x)
+  y <- c(northseasons,rainyseason)
+}
+
 ## The start-up settings - global variables etc used in the UI and server. Supports several languages
 print('--- <Initial settings> ---')
 ## Defaults
@@ -296,10 +303,10 @@ types <- c("altitude","first.year","lastrains","lastdry","last.year","latitude",
 
 ## Seasons for the statistics presented in the maps
 sea <- c('All year'='all','Dec-Feb'='DJF',
-         'Mar-May'='MAM','Jun-Aug'='JJA','Sep-Nov'='SON')
+         'Mar-May'='MAM','Jun-Aug'='JJA','Sep-Nov'='SON','Oct-Mar'='ONDJFM')
 ## Seasons to present in the time series plots
 seaTS <- c('All year'='all','Dec-Feb'='DJF',
-           'Mar-May'='MAM','Jun-Aug'='JJA','Sep-Nov'='SON',month.abb)
+           'Mar-May'='MAM','Jun-Aug'='JJA','Sep-Nov'='SON','Oct-Mar'='ONDJFM',month.abb)
 
 ## Thesholds
 #thresholds <- seq(10,50,by=10)
