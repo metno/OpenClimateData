@@ -137,8 +137,8 @@ server <- function(input, output, session) {
   ## Update the list of available statistics in the drop-down menues:
   observe({
     print('<07: observe - Update statistics')
-    #ci <- updateci()
-    #varids <- updatevarids()
+    ci <- updateci()
+    varids <- updatevarids()
     stattype <- getstattype(updatefile(),lingo=input$lingo)
     print(ci); print(varids[as.numeric(ci)])
     if (!is.na(varids[as.numeric(input$ci)])) { 
