@@ -44,7 +44,7 @@ mkdir Rlibs
 ## Install needed R-packages:
 cat > set-up.R << EOF
   ## This line does not work well on a VM
-  ##install.packages(c('devtools','shiny','shinydashboard','leaflet','plotly'),repos='http://cran.uib.no')
+  install.packages(c('devtools','shiny','shinydashboard','leaflet','plotly'),repos='http://cran.uib.no')
   library(devtools)
   install_github('metno/esd')
 EOF
