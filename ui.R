@@ -71,7 +71,7 @@ ui <- dashboardPage(
                    column(3, selectInput("season", textOutput("seasonlabel"), choices= sea)),
                    column(2, selectInput("highlight", textOutput("highlightlabel"), choices= highlighting)),
                    
-                   column(3, conditionalPanel(condition="input.statistic == 'Specific_day'",
+                   column(3, conditionalPanel(condition = "input.statistic == 'Specific_day'",
                                               dateInput("it",textOutput("daylabel"), 
                                                         value=attr(Y,'period')[2]))),
                    fluidRow(leafletOutput("map",height = 700)),
@@ -87,13 +87,16 @@ ui <- dashboardPage(
           fluidRow(plotlyOutput("plotstation", height = 500,width = '100%')),
           fluidRow(box(textOutput("cntr"),background='light-blue',width=14)),
           fluidRow(column(2,selectInput("tscale", textOutput("timescalelabel"), choices= tscales, selected='year')),
-                   column(3,selectInput("aspect", textOutput("aspectlabel"), choices= aspects,selected = aspects[1])),
+                   column(2,conditionalPanel(condition = "tscale != 'day'",
+                                            selectInput("aspect", textOutput("aspectlabel"), choices= aspects,selected = aspects[1]))),
+                   column(2,conditionalPanel(condition = "tscale != 'year'",
+                                             selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))),
+                   # column(2,conditionalPanel(condition = "tscale == 'year'",
+                   #                           selectInput("yearstart", "Start ofyear", choices= month.abb,selected='Jan'))),
+                   column(2,selectInput("yearstart", "Yearstart", choices= month.abb,selected='Jan')),
                    column(2,selectInput("highlightTS", textOutput("highlightTSlabel"), choices= highlighting)),
-                   column(2,selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS)),
-                   column(3,sliderInput("itt", "Period:", min = min(year(y)), max=max(year(y)), 
+                   column(2,sliderInput("itt", "Period:", min = min(year(y)), max=max(year(y)),
                           value = c(min(year(y)),max(year(y))),sep='',round=TRUE))
-                   # conditionalPanel(condition="tscale == 'day'",
-                   #                  selectInput("seasonTS", textOutput("seasonTSlabel"), choices= seaTS))
           ))
         ),
         tabPanel(title=uiOutput("htitle"),fluidPage(

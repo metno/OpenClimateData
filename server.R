@@ -123,6 +123,7 @@ server <- function(input, output, session) {
   ## Change the time scale for the time series box
   observeEvent(input$tscale, {
     print(paste("<06: observeEvent(input$tscale=",input$tscale,')'))
+    y <- updatetimeseries()
     if (input$tscale=='year') newseaTS <- seaTS[1] else
       if (input$tscale=='season') newseaTS <- seaTS[1:5] else newseaTS <- seaTS
       
@@ -148,6 +149,8 @@ server <- function(input, output, session) {
       updateSelectInput(session=session,inputId="xy_col",choices=stattype,selected='altitude')
       updateSelectInput(session=session,inputId="xy_size",choices=stattype,selected='number.valid')
       
+      updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
+      
       names(timespace) <- timespacenames[as.numeric(input$lingo),]
       print(varids[as.numeric(input$ci)])
       if (varids[as.numeric(input$ci)] != 'precip') timespaces <- timespace[-grep('IDF',timespace,ignore.case=TRUE)] else
@@ -168,6 +171,10 @@ server <- function(input, output, session) {
     if (sum(sel)==0) print(locations()) else
       print(paste(locations()[sel][1],'from',length(locations()),'sites'))
     updateSelectInput(session=session,inputId="location", choices = locations(), selected=loc1)
+    
+    updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
+    # updateSelectInput(session=session,inputId="seasonTS",choices=seaTS,selected=aspects[1])
+    # updateSelectInput(session=session,inputId="yearstart",choices=month.abb)
   })
   
   
@@ -204,6 +211,7 @@ server <- function(input, output, session) {
     print(paste('<10: observe - Update aspects: input$ci=',input$ci,'input$lingo=',input$lingo))
     print(varids)
     #REB2020-11-05*** varids <- updatevarids()
+    y <- updatetimeseries()
     ii <- as.numeric(input$ci)
     ## The next lines is  fudge to avoid crash if input$ci is not properly updated
     if (ii > length(varids)) ii <- (1:length(varid))[is.element(varids,'precip')]
@@ -220,7 +228,7 @@ server <- function(input, output, session) {
     updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
   })
   
-  ## Updates the countries in thedrop-down list
+  ## Updates the countries in the drop-down list
   observe({
     print('<11: observe - Update country list')
     Y <- updatemetadata()
@@ -233,7 +241,7 @@ server <- function(input, output, session) {
   ## Reactive expressions to update information -------------------------------------------------------------- 
   
   ## The following expression extracts the variable IDs from the files found in the data folder: 
-  ## NB! This has to come before the subsequent expressions to avoid runing code several times.
+  ## NB! This has to come before the subsequent expressions to avoid running code several times.
   updatevarids <- reactive({
     print('<12: reactive - updatevarids()')
     fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
@@ -348,6 +356,8 @@ server <- function(input, output, session) {
   ## Get the right time series:
   updatetimeseries <- reactive({
     print('<19: reactive - updatetimeseries()')
+    ystart <- input$yearstart
+    print(paste('ystart=',ystart))
     y <- updatestation()
     x0 <- as.numeric(input$x0)
     ## If anomaly
@@ -373,15 +383,15 @@ server <- function(input, output, session) {
       meanx <- switch(input$tscale,
                       'month'=as.monthly(y,FUN='mean',nmin=25),
                       'season'=as.seasons(y,FUN='mean',nmin=80),
-                      'year'=as.annual(y,FUN='mean',nmin=300))
+                      'year'=as.annual(y,FUN='mean',nmin=300,start=ystart))
       sdx <- switch(input$tscale,
                     'month'=as.monthly(y,FUN='sd',nmin=25),
                     'season'=as.seasons(y,FUN='sd',nmin=80),
-                    'year'=as.annual(y,FUN='sd',nmin=300))
+                    'year'=as.annual(y,FUN='sd',nmin=300,start=ystart))
       y <- switch(input$tscale,
                   'month'=as.monthly(y,FUN='count',threshold=x0,nmin=25),
                   'season'=as.seasons(y,FUN='count',threshold=x0,nmin=80),
-                  'year'=as.annual(y,FUN='count',threshold=x0,nmin=300))
+                  'year'=as.annual(y,FUN='count',threshold=x0,nmin=300,start=ystart))
       nds <- switch(input$tscale,
                     'month'=30,
                     'season'=90,
@@ -402,11 +412,11 @@ server <- function(input, output, session) {
       if (FUN != 'count')  
         y <- switch(input$tscale,
                     'day'=y,'month'=as.monthly(y,FUN=FUN),
-                    'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN,nmin=300)) else
+                    'season'=as.4seasons(y,FUN=FUN),'year'=as.annual(y,FUN=FUN,nmin=300,start=ystart)) else
                       y <- switch(input$tscale,
                                   'day'=y,'month'=as.monthly(y,FUN=FUN,threshold=x0,nmin=25),
                                   'season'=as.4seasons(y,FUN=FUN,threshold=x0,nmin=80),
-                                  'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300))
+                                  'year'=as.annual(y,FUN=FUN,threshold=x0,nmin=300,start=ystart))
     }
     #if (is.T(y)) browser()
     
@@ -471,11 +481,12 @@ server <- function(input, output, session) {
         } else {
           ## Get a specific date it
           it <- input$it
+          if (is.na(it)) it <- attr(Y,'period')[2]
           ## Make sure the date is within the range of valid dates in the netCDF file 
           #print("reactive vals - specific date"); print(it); print(attr(Y,'period'))
           if (as.Date(it) < as.Date(attr(Y,'period')[1])) it <- attr(Y,'period')[1]
           if (as.Date(it) > as.Date(attr(Y,'period')[2])) it <- attr(Y,'period')[2]
-          #print("Read a specific date from the netCDF file"); print(it); print(updatefile())
+          print("Read a specific date from the netCDF file"); print(it); print(updatefile())
           x <- retrieve.station(updatefile(),it=it,verbose=verbose)
           Z <- c(coredata(x))
           dim(Z) <- c(length(Z),1)
@@ -483,7 +494,7 @@ server <- function(input, output, session) {
           Z <- Z[match(Y$station.id,stid(x))]
           #print(cbind(stid(x),Y$station.id,stid(x)[match(Y$station.id,stid(x))])[1:10,])
           #print(summary(Z))
-          #print('...')
+          print('Retrieved a date...')
         }
       } 
     if (input$statistic=='number.valid') Z <- eval(parse(text=paste('Y$',input$statistic,sep='')))/365.25
@@ -998,6 +1009,9 @@ server <- function(input, output, session) {
     lab.highlight[as.numeric(input$lingo)]})
   output$daylabel <- renderText({
     lab.specificday[as.numeric(input$lingo)]})
+  output$Yearstart <- renderText({
+    c('År start','ÅR start','Year start')[as.numeric(input$lingo)]
+  })
   output$enddate <- renderText({
     Y <- updatemetadata()
     #print('output$enddate'); print(attr(Y,'period'))
