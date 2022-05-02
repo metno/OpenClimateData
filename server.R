@@ -689,8 +689,11 @@ server <- function(input, output, session) {
       addLegend("bottomright", pal=pal, values=round(statistic[filter], digits = 2), 
                 title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
-      addProviderTiles(providers$Esri.WorldStreetMap,
-                       #addProviderTiles(providers$Stamen.TonerLite,
+      #addProviderTiles(providers$Esri.WorldStreetMap,
+      #addProviderTiles(provider$Esri.WorldTopoMap,
+      #addProviderTiles(providers$Stamen.TonerLite,
+      #addProviderTiles(providers$Stamen.TerrainBackground,
+      addProviderTiles(providers$Stamen.Terrain,
                        options = providerTileOptions(noWrap = FALSE)) %>% 
       setView(lat=Y$latitude[filter][is],lng = Y$longitude[filter][is], zoom = zoom())
   })
