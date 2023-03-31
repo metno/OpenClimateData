@@ -248,10 +248,14 @@ names(r_colors) <- colors()
 #src <- c('metnod','ecad','Asia','Pacific')
 
 ## The labeling of the data sources in the menu
-regions <- rbind(c('Norge','Europa','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
-                 c('Noreg','Europa','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
-                 c('Norway','Europe','Eurasia','Asia','The Pacific','Africa','Latin-America','Australia','North America','Mozambique','Argentinia'))
-source.regions <- c('metnod','eustance','ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA','INAM','CLARIS')
+regions <- rbind(c('Norge','Europa','Europa','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America',
+                   'Mosambik','Argentina','Midtøsten','Nord-Afrika','Sørøst-Afrika'),
+                 c('Noreg','Europa','Europa','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America',
+                   'Mosambik','Argentina','Midtausten','Nord-Afrika','Søraust-Afrika'),
+                 c('Norway','Europe','Europe','Asia','The Pacific','Africa','Latin-America','Australia','North America',
+                   'Mozambique','Argentinia','Middle-East','North-Africa','Southeast-Africa'))
+source.regions <- c('metnod','eustance','europe.ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA',
+                    'INAM','CLARIS','meast.ecad','nafrca.ecad','southeastAfrica')
 
 names.src <- regions[1,match(src,source.regions)]
 ## If not in the list, use part of the file neams as region identifier.
