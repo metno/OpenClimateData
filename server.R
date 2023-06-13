@@ -439,8 +439,10 @@ server <- function(input, output, session) {
   zoom <- reactive({
     print('<20: reactive - zoom()')
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'eustance'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,'Africa'=3,'USA'=3,'Australia'=4,
-                        'INAM'=6,'CLARIS'=6)
+                        'metnod'=5,'ecad'=4,'eustance'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,
+                        'Africa'=3,'USA'=3,'Australia'=4,
+                        'INAM'=6,'CLARIS'=6,
+                        'southeastAfrica'=6)
     if (is.na(zoomscale)) zoomscale <- 5
     return(zoomscale)
   })
@@ -653,16 +655,17 @@ server <- function(input, output, session) {
     radius <- rep(input$rad,length(statistic[filter]))
     radius[!is.finite(statistic[filter])] <- 1
     
-    # print(paste('The map is being rendered:','Number of locations shown=',sum(filter),'with',sum(!is.finite(statistic)),
-    #             'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
-    #             input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
-    # print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
-    # print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
-    #           Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is],
-    #           'n=',length(statistic[filter]),' good=',sum(good)))
-    # str(Y$longitude[filter]); str(Y$latitude[filter])
-    # print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
-    # str(radius); 
+    print(paste('The map is being rendered:','Number of locations shown=',sum(filter),'with',sum(!is.finite(statistic)),
+                'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
+                input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
+    print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
+    print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
+              Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is],
+              'n=',length(statistic[filter]),' good=',sum(good)))
+    str(Y$longitude[filter]); str(Y$latitude[filter])
+    print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
+    str(radius);
+    
     str(Y$station.id[filter])
     
     leaflet("mapid") %>% 
@@ -673,7 +676,7 @@ server <- function(input, output, session) {
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
                        radius =radius,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
-                       fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
+                       fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>%
       addCircleMarkers(lng = Y$longitude[filter][is], lat = Y$latitude[filter][is],fill=TRUE,
                        label = paste(Y$location[filter][is],as.character(round(statistic[filter][is],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
@@ -687,7 +690,7 @@ server <- function(input, output, session) {
                        radius=6,stroke=TRUE, weight=3, color='black',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.5,fillColor=pal(statistic[filter])[highlight]) %>%
-      addLegend("bottomright", pal=pal, values=round(statistic[filter], digits = 2), 
+      addLegend("bottomright", pal=pal, values=round(statistic[filter], digits = 2),
                 title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
       #addProviderTiles(providers$Esri.WorldStreetMap,
@@ -696,7 +699,7 @@ server <- function(input, output, session) {
       #addProviderTiles(providers$Stamen.TerrainBackground,
       addProviderTiles(providers$Stamen.Terrain,
                        options = providerTileOptions(noWrap = FALSE)) %>% 
-      setView(lat=Y$latitude[filter][is],lng = Y$longitude[filter][is], zoom = zoom())
+      setView(lat=Y$latitude[filter][is],lng = Y$longitude[filter][is], zoom())
   })
   
   output$plotstation <- renderPlotly({
@@ -1046,7 +1049,8 @@ server <- function(input, output, session) {
   output$datainterval <- renderText({
     print("output$datainterval <- renderText({...")
     Y <- updatemetadata()
-    print('output$datainterval'); print(paste('Source:',input$src))
+    print('output$datainterval'); print(paste('Source:',input$src)); print(attr(Y,'period'))
+    print(match(input$src,source.regions),as.numeric(input$lingo))
     print(paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
                 attr(Y,'period')[1],' - ',attr(Y,'period')[2]))
     paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],

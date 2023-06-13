@@ -296,7 +296,8 @@ sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner 
                   c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
                     'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
                     'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('INAM','INAM','INAM'),c('CLARIS','CLARIS','CLARIS'))
+                  c('INAM','INAM','INAM'),c('CLARIS','CLARIS','CLARIS'),rep('meast.ecad',3),rep('nafrca.ecad',3),
+                  rep('CORDEX FPS southeast Africa',3) )
 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","lastdry","last.year","latitude","longitude","max",           
