@@ -1,0 +1,1 @@
+This prototype was developed using R-shiny. There is a tutorial on how R-shiny apps work from [R-studio t.](https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/) 

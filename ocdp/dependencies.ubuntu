@@ -1,0 +1,53 @@
+#!/bin/bash
+# Declaring ubuntu package dependencies - all package names are deb packages to be installed with apt-get install
+RUN_DEPS=()
+COMPILE_DEPS=()
+
+function add_run_compile_deps() {
+  # just pass package name for runtime dependency if compiletime dependency has the same name with -dev suffix
+  # `add_run_compile_deps r-base`
+  # if name of dev-package differs
+  # `add_run_compile_deps libgit2-1.1 libgit2-dev`
+  RUN_DEP=$1
+  BUILD_DEP=${2:-}
+  if [ -z "${BUILD_DEP}" ]; then
+    BUILD_DEP="${RUN_DEP}-dev"
+  fi
+  RUN_DEPS+=("${RUN_DEP}")
+  COMPILE_DEPS+=("${BUILD_DEP}")
+}
+
+add_run_compile_deps libgdal30 libgdal-dev
+add_run_compile_deps libgit2-1.1 libgit2-dev
+add_run_compile_deps liblapack3 liblapack-dev
+add_run_compile_deps libnetcdf19 libnetcdf-dev
+add_run_compile_deps libssl3 libssl-dev
+add_run_compile_deps libxml2
+add_run_compile_deps r-base
+
+# Add special runtime dependencies that isn't needed during compile time
+RUN_DEPS+=(
+  r-cran-cachem
+  r-cran-digest
+  r-cran-ellipsis
+  r-cran-fastmap
+  r-cran-httr
+  r-cran-lifecycle
+  r-cran-magrittr
+  r-cran-mime
+  r-cran-purrr
+  r-cran-r6
+  r-cran-rlang
+  r-cran-tibble
+  r-cran-vctrs
+  r-cran-withr
+)
+
+# Add special compile time dependencies that doesn't need any runtime libraries
+COMPILE_DEPS+=(
+  build-essential
+  r-cran-devtools
+)
+
+echo "RUN_DEPS=\"${RUN_DEPS[@]}\""
+echo "COMPILE_DEPS=\"${COMPILE_DEPS[@]}\""

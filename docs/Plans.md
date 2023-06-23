@@ -1,0 +1,1 @@
+One plan for the OpenClimateData prototype is to make it link up with the [Climsoft](https://github.com/opencdms/Climsoft/wiki/Developer's-Guide) database.

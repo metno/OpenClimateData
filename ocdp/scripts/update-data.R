@@ -1,4 +1,4 @@
-## Update data on a daila basis
+## Update data on a daily basis
 
 library(esd)
 ##Parameters to display
