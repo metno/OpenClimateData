@@ -4,6 +4,8 @@
 # Load the ggplot2 package which provides
 # the 'mpg' dataset.
 
+print("server")
+
 # Define a server for the Shiny app 
 server <- function(input, output, session) {
   

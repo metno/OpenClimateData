@@ -16,15 +16,16 @@
 library(esd)
 
 
-print('Put metnod-data in netCDF files - updated version 2023-01-20')
+print('Put metnod-data in netCDF files - updated version 2023-07-25 OpenClimateData version')
 test <-FALSE; if (test) print('Test mode...')
-verbose=TRUE
+verbose=FALSE
 add.latest=TRUE # In case some of the latest data is suspect or corrupt, then set to FALSE. Used for testing purposes.  
 ## Generate a new file from scratch at the start of each month:
 if (format(Sys.time(),'%d')=="01") new.data.file <- TRUE else new.data.file <- FALSE
 new.data.file <- FALSE
 #fromenddate <- '1961-01-01'
 fromenddate <- NULL
+i30path <- 'nc30'
 t1 <- Sys.time()
 
 ## Select one or several of the elements through an index
@@ -67,6 +68,7 @@ for (param in params) {
     ## If the file already exists and is to be updated, then read the metadata from the netCDF file 
     ## to save computational demands, data traffic and demand on the database: 
     meta <- retrieve.stationsummary(fname)
+    print(paste('retrieved metadata from',fname))
     ## Find the dates missing in the netCDF files:
     it <- c(as.character(as.Date(attr(meta,'period')[2])+1),as.character(Sys.Date()))
     is <- meta$station_id
@@ -154,15 +156,36 @@ for (param in params) {
         ## Test to see if the path has write access - if not, use the local path
         test.writeaccess <- file.access(path, 2)
         if (test.writeaccess == -1) path <- './'
-        fname <- paste0(path,param,'.metnod.nc') 
+        Fname <- paste0(path,param,'.metnod.nc'); fname <-  paste0(param,'.metnod.nc')
         ## The OCDP uses 'pp' from ECA&D notation rater than 'slp' in its file name convention 
-        fname <- sub('slp','pp',fname)
+        fname <- sub('slp','pp',fname); Fname <- sub('slp','pp',Fname)
         n <- length(index(z))
         print(paste0('write2ncdf4.station: ',fname,'x dates: ',index(z)[1],' - ',index(z)[n]))
-        write2ncdf4.station(z,file=paste0(fname,'x'),verbose=verbose)
-        file.rename(paste0(fname,'x'),fname)
+        
+        ## Split data to save with write2ncdf4.station into smaller chunks of 30 stations
+        ns <- dim(z)[2]
+        #nctemp <- list()
+       # append <- FALSE
+        if (!file.exists(i30path)) dir.create(i30path) else 
+          if (length(list.files(path=i30path))>0) file.remove(list.files(path=i30path,full.names = TRUE))
+        for (i30 in seq(1,ns,by=30)) {
+          print(paste('Saving stations,',i30,'to',min(c(i30+29,ns)),'in',
+                      file.path(i30path,paste0(fname,'_',i30,'.nc'))))
+          z30 <- subset(z,is=i30:min(c(i30+29,ns)))
+          #nctemp[[paste0(fname,i30,'nc')]] <- paste0(fname,i30,'nc')
+          #write2ncdf4.station(z30,file=paste0(fname,'x'),append = append,verbose=verbose)
+          #append - TRUE
+          ci30 <- as.character(i30); while (nchar(ci30) < 4) ci30 <- paste0('0',ci30)
+          write2ncdf4.station(z30,file=file.path(i30path,paste0(fname,'_',ci30,'.nc')),verbose=verbose)
+        }
+        print('Finished saving all station subsets into nc-files - now combine them')
+        nc30files <- list.files(path=i30path,pattern=fname,full.names=TRUE)
+        nc4combine.stations(nc30files,out=paste0(fname,'x'),verbose=verbose)
+        file.remove(nc30files); file.remove(i30path)
+        file.rename(paste0(fname,'x'),Fname)
+        #file.remove(names(nctemp))
         print("test new file")
-        meta.test <- retrieve.stationsummary(fname)
+        meta.test <- retrieve.stationsummary(Fname)
         if (!is.null(meta)) print(paste('Old netCDF file:',paste(attr(meta,'period')),collapse = ' - '))
         print(paste('New netCDF file:',paste(attr(meta.test,'period')),collapse = ' - '))
       } else print('<<< File is up-to-date >>>')
