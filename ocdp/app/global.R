@@ -248,10 +248,14 @@ names(r_colors) <- colors()
 #src <- c('metnod','ecad','Asia','Pacific')
 
 ## The labeling of the data sources in the menu
-regions <- rbind(c('Norge','Europa','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
-                 c('Noreg','Europa','Eurasia','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America','Mosambik','Argentina'),
-                 c('Norway','Europe','Eurasia','Asia','The Pacific','Africa','Latin-America','Australia','North America','Mozambique','Argentinia'))
-source.regions <- c('metnod','eustance','ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA','INAM','CLARIS')
+regions <- rbind(c('Norge','Europa','Europa','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America',
+                   'Mosambik','Argentina','Midtøsten','Nord-Afrika','Sørøst-Afrika'),
+                 c('Noreg','Europa','Europa','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America',
+                   'Mosambik','Argentina','Midtausten','Nord-Afrika','Søraust-Afrika'),
+                 c('Norway','Europe','Europe','Asia','The Pacific','Africa','Latin-America','Australia','North America',
+                   'Mozambique','Argentinia','Middle-East','North-Africa','Southeast-Africa'))
+source.regions <- c('metnod','eustance','europe.ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA',
+                    'INAM','CLARIS','meast.ecad','nafrca.ecad','southeastAfrica')
 
 names.src <- regions[1,match(src,source.regions)]
 ## If not in the list, use part of the file neams as region identifier.
@@ -292,7 +296,8 @@ sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner 
                   c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
                     'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
                     'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('INAM','INAM','INAM'),c('CLARIS','CLARIS','CLARIS'))
+                  c('INAM','INAM','INAM'),c('CLARIS','CLARIS','CLARIS'),rep('meast.ecad',3),rep('nafrca.ecad',3),
+                  rep('CORDEX FPS southeast Africa',3) )
 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","lastdry","last.year","latitude","longitude","max",           
@@ -410,7 +415,6 @@ cntrs <- c('All',rownames(table(Y$country)))
 filter <- rep(TRUE,length(Y$station.id))
 
 print('--- <Settings OK> ---')
-
 
 
 

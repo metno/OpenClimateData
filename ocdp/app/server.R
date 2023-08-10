@@ -4,6 +4,8 @@
 # Load the ggplot2 package which provides
 # the 'mpg' dataset.
 
+print("server")
+
 # Define a server for the Shiny app 
 server <- function(input, output, session) {
   
@@ -439,8 +441,11 @@ server <- function(input, output, session) {
   zoom <- reactive({
     print('<20: reactive - zoom()')
     zoomscale <- switch(input$src,
-                        'metnod'=5,'ecad'=4,'eustance'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,'Africa'=3,'USA'=3,'Australia'=4,
-                        'INAM'=6,'CLARIS'=6)
+                        'metnod'=5,'ecad'=4,'eustance'=4,'Asia'=4,'Pacific'=4,'LatinAmerica'=4,
+                        'Africa'=3,'USA'=3,'Australia'=4,
+                        'INAM'=6,'CLARIS'=6,
+                        'southeastAfrica'=6)
+    if (is.na(zoomscale)) zoomscale <- 5
     return(zoomscale)
   })
   
@@ -652,16 +657,17 @@ server <- function(input, output, session) {
     radius <- rep(input$rad,length(statistic[filter]))
     radius[!is.finite(statistic[filter])] <- 1
     
-    # print(paste('The map is being rendered:','Number of locations shown=',sum(filter),'with',sum(!is.finite(statistic)),
-    #             'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
-    #             input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
-    # print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
-    # print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
-    #           Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is],
-    #           'n=',length(statistic[filter]),' good=',sum(good)))
-    # str(Y$longitude[filter]); str(Y$latitude[filter])
-    # print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
-    # str(radius); 
+    print(paste('The map is being rendered:','Number of locations shown=',sum(filter),'with',sum(!is.finite(statistic)),
+                'bad points - range of values= [',min(statistic,na.rm=TRUE),max(statistic,na.rm=TRUE),'] - slider:',
+                input$statisticrange[1],'-',input$statisticrange[2],' ci=',input$ci,'is=',is))
+    print(summary(statistic)); print(summary(Y$longitude)); print(summary(Y$latitude))
+    print(paste('Filter: is=',is,'l=',length(filter),'s=',sum(filter),'ID=',Y$station.id[filter][is],
+              Y$longitude[filter][is],Y$latitude[filter][is],Y$location[filter][is],
+              'n=',length(statistic[filter]),' good=',sum(good)))
+    str(Y$longitude[filter]); str(Y$latitude[filter])
+    print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
+    str(radius);
+    
     str(Y$station.id[filter])
     
     leaflet("mapid") %>% 
@@ -672,7 +678,7 @@ server <- function(input, output, session) {
                        popup = Y$location[filter],popupOptions(keepInView = TRUE),
                        radius =radius,stroke=TRUE,weight = 1, color='black',
                        layerId = Y$station.id[filter],
-                       fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>% 
+                       fillOpacity = 0.4,fillColor=pal(statistic[filter])) %>%
       addCircleMarkers(lng = Y$longitude[filter][is], lat = Y$latitude[filter][is],fill=TRUE,
                        label = paste(Y$location[filter][is],as.character(round(statistic[filter][is],digits = 2))),
                        labelOptions = labelOptions(direction = "right",textsize = "12px",opacity=0.6),
@@ -686,7 +692,7 @@ server <- function(input, output, session) {
                        radius=6,stroke=TRUE, weight=3, color='black',
                        layerId = Y$station.id[filter][highlight],
                        fillOpacity = 0.5,fillColor=pal(statistic[filter])[highlight]) %>%
-      addLegend("bottomright", pal=pal, values=round(statistic[filter], digits = 2), 
+      addLegend("bottomright", pal=pal, values=round(statistic[filter], digits = 2),
                 title=legendtitle(),
                 layerId="colorLegend",labFormat = labelFormat(big.mark = "")) %>%
       #addProviderTiles(providers$Esri.WorldStreetMap,
@@ -695,15 +701,17 @@ server <- function(input, output, session) {
       #addProviderTiles(providers$Stamen.TerrainBackground,
       addProviderTiles(providers$Stamen.Terrain,
                        options = providerTileOptions(noWrap = FALSE)) %>% 
-      setView(lat=Y$latitude[filter][is],lng = Y$longitude[filter][is], zoom = zoom())
+      setView(lat=Y$latitude[filter][is],lng = Y$longitude[filter][is], zoom())
   })
   
   output$plotstation <- renderPlotly({
     print('<25: output$plotstation - render')
-    # print(paste('Time series for',input$location,'ci=',input$ci,'season=',input$season,
-    #             'tscale=',input$tscale,'aspect=',input$aspect))
+    print('output$plotstation <- renderPlotly({')
+    print(paste('Time series for',input$location,'ci=',input$ci,'season=',input$season,
+                 'tscale=',input$tscale,'aspect=',input$aspect))
     y <- updatetimeseries()
-    #print(summary(coredata(y)))
+    print('Time series updated...')
+    print(summary(coredata(y)))
     #if (is.precip(y)) thresholds <- seq(10,50,by=10) else thresholds <- seq(-30,30,by=5)
     
     ## Marking the top and low 10 points
@@ -731,6 +739,7 @@ server <- function(input, output, session) {
     
     #print('The timeseries is being rendered')
     if ( (!is.null(dim(y))) & ((input$aspect=="Number_of_days")  | (input$aspect=="Days_above_normal"))  ){
+      print(paste('In terms of number of days:',input$aspect))
       ndps <- switch(input$tscale,
                      'year'=365.25,"day"=1,"month"=30,"season"=90)
       timeseries <- data.frame(date=index(y),pr=ndps*coredata(y[,1]),obs= ndps*coredata(y[,2]),
@@ -741,6 +750,7 @@ server <- function(input, output, session) {
         add_trace(y=~pr,name="predicted",color=rgb(0,0,1,0.5)) %>%
         layout(title=loc(y),yaxis = list(title='days/year'))
     } else {
+      print(paste('In terms of analytical statistics:',input$aspect))
       timeseries <- data.frame(date=index(y),y=coredata(y),trend=coredata(trend(y)))
       #print(summary(timeseries))
       TS <- plot_ly(timeseries,x=~date,y=~y,type = 'scatter',mode='lines',name='data')
@@ -748,13 +758,15 @@ server <- function(input, output, session) {
         TS = TS %>% add_trace(y=~trend,name='trend') %>% 
           layout(title=loc(y),yaxis = list(title=esd::unit(y)))
       } else {
+        print("highlight selected points")
         TS = TS %>% add_trace(y=~trend,name='trend') %>% 
           add_markers(x=index(highlight10),y=coredata(highlight10),hoveron=input$highlightTS) %>% 
           layout(title=loc(y),yaxis = list(title=esd::unit(y)))
       }
     }
     #TS$elementID <- NULL
-    
+    print('... }) 25<')
+    TS
   })
   
   output$histstation <- renderPlotly({
@@ -873,13 +885,21 @@ server <- function(input, output, session) {
         lyr <- data.frame(y=mac$y[it],Month=mac$Month[it])
         print(lyr)
         AC <- AC %>% add_trace(AC,data=lyr,x=~Month,y=~y,name=yrnow,type='scatter',size=10)
-        clim6190 <- aggregate(subset(as.monthly(y),it=1961:1990),month,FUN=FUN)
-        clim9120 <- aggregate(subset(as.monthly(y),it=1991:2020),month,FUN=FUN)
+        clim6190 <- try(aggregate(subset(as.monthly(y),it=1961:1990),month,FUN=FUN))
+        if (inherits(clim6190,'try-error')) clim6190 <- rep(NA,12)
+        clim9120 <- try(aggregate(subset(as.monthly(y),it=1991:2020),month,FUN=FUN))
+        if (inherits(clim9120,'try-error')) clim9120 <- rep(NA,12)
         klim <- data.frame(Month=1:12,y1=clim6190,y2=clim9120)
         AC <- AC %>% add_trace(AC,data=klim,x=~Month,y=~y1,name='1961-1990',type='scatter',mode='lines',line=list(width = 4))
         AC <- AC %>% add_trace(AC,data=klim,x=~Month,y=~y2,name='1991-2020',type='scatter',mode='lines',line=list(width = 2, dash = 'dash'))
       } else {
+        print(paste('...else input$timescale=',input$timespace))
         y <- updatestation()
+        print(paste(loc(y),varid(y),stid(y)))
+        print(paste(sum(is.finite(y)),'valid data points and',sum(!is.finite(y)),'invalid ones. The data range is',
+                    paste(range(y,na.rm=TRUE),collapse=' - '),'over the period',paste(range(index(y)),collapse=' - '),
+                    'aspect=',attr(y,'aspect')))
+        attr(y,'aspect') <- 'observed'
         clim <- climatology(y)
         if (is.precip(y)) fun <- 'sum' else fun <- 'mean'
         if (input$timespace!='Annual_cycle_cumugram') Z <- diagram(y,plot=FALSE) else 
@@ -1016,9 +1036,12 @@ server <- function(input, output, session) {
     c('År start','ÅR start','Year start')[as.numeric(input$lingo)]
   })
   output$enddate <- renderText({
+    print("output$enddate <- renderText({...")
     Y <- updatemetadata()
     #print('output$enddate'); print(attr(Y,'period'))
-    attr(Y,'period')[2]})
+    attr(Y,'period')[2]
+    print("...{)")
+    })
   output$excludelabel <- renderText({
     lab.exclude[as.numeric(input$lingo)]})
   output$seasonTSlabel <- renderText({
@@ -1026,24 +1049,33 @@ server <- function(input, output, session) {
   output$mapdescription <- renderText({
     paste(descrlab[as.numeric(input$lingo)],explainmapstatistic(input$statistic,input$lingo,types))})
   output$datainterval <- renderText({
+    print("output$datainterval <- renderText({...")
     Y <- updatemetadata()
-    print('output$datainterval'); print(paste('Source:',input$src))
+    print('output$datainterval'); print(paste('Source:',input$src)); print(attr(Y,'period'))
+    print(match(input$src,source.regions),as.numeric(input$lingo))
     print(paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
                 attr(Y,'period')[1],' - ',attr(Y,'period')[2]))
     paste(sources[match(input$src,source.regions),as.numeric(input$lingo)],
-          attr(Y,'period')[1],' - ',attr(Y,'period')[2])})
+          attr(Y,'period')[1],' - ',attr(Y,'period')[2])
+    })
   output$cntr <- renderText({
+    print("output$cntr <- renderText({...")
     y <- updatetimeseries()
     average <- round(mean(y[,1],na.rm=TRUE),1)[1]; slope <- round(trend.coef(y[,1]),2)[1]
     varpro <- round(100*var(trend(y[,1],na.rm=TRUE))/var(y[,1],na.rm=TRUE))[1]
     trendpvalue <- round(100*trend.pval(y[,1]),2)[1]
     #print(c(average,slope,varpro,trendpvalue))
-    paste(esd::loc(y)[1],'in',esd::cntr(y)[1],'mean=',average,'. Trend=', slope,esd::unit(y)[1],'per decade and explains', 
+    textout <- paste(esd::loc(y)[1],'in',esd::cntr(y)[1],'mean=',average,'. Trend=', slope,esd::unit(y)[1],'per decade and explains', 
           varpro,'% of the variance with a probability of',trendpvalue,'% that it is due to chance.')
+    print("...{)")
+    textout
   })
   output$hdes <- renderText({
+    print("output$hdes <- renderText({...")
     y <- updatetimeseries()
     Y <- updatemetadata()
+    print(paste(loc(y),varid(y),sum(is.finite(y)),'valid data points and',sum(!is.finite(y)),'invalid ones. The data range is',
+                paste(range(y,na.rm=TRUE),collapse=' - '),'over the period',paste(range(index(y)),collapse=' - ')))
     statistic <- vals()
     ## Apply filter to highlight stations selected in the map
     n <- length(statistic)
@@ -1060,7 +1092,9 @@ server <- function(input, output, session) {
     if (input$timespace == 'Histogram_location') {
       yH <- coredata(y) 
     } else yH <- statistic
-    syH <- round(summary(yH)[c(1,4,6)],1)
+    print(summary(yH[is.finite(yH)]))
+    syH <- round(summary(yH[is.finite(yH)])[c(1,4,6)],1)
+    print(summary(yH))
     if ( (substr(input$timespace,1,12) != 'Annual_cycle') & (substr(input$timespace,1,6) != 'Trends') ) {
       if (input$timespace=='Histogram_map') 
         hsum <- paste('Data= ',input$statistic,' ', attr(Y,'longname'),': ',paste(names(syH),syH,collapse=', ',sep='='),sep='') 
@@ -1080,6 +1114,7 @@ server <- function(input, output, session) {
     }
     #print(c(hdescr,hsum))
     paste(hdescr,'. ',hsum,'. Sample size= ',sum(is.finite(yH)),' data points.',sep='')
+    print("...{)")
   })
   output$yearlabel <- renderText({
     showhideyears[as.numeric(input$lingo)]})
