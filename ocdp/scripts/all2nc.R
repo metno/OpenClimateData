@@ -45,8 +45,7 @@ if (test) {
 for (param in params) {  
   print(param)
   if (!test) { 
-    #path <- '~/data/data.METNOD/'
-    path <- '~/OpenClimateData/data/'
+    path <- '/srv/shiny-server/data'
     testfile <- paste0(path,param,'.metnod.nc')
     if (!file.exists(testfile)) {
       print(paste('Unable to read',testfile))
