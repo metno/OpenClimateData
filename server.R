@@ -174,7 +174,7 @@ server <- function(input, output, session) {
       print(paste(locations()[sel][1],'from',length(locations()),'sites'))
     updateSelectInput(session=session,inputId="location", choices = locations(), selected=loc1)
     
-    updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
+    # updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
     # updateSelectInput(session=session,inputId="seasonTS",choices=seaTS,selected=aspects[1])
     # updateSelectInput(session=session,inputId="yearstart",choices=month.abb)
   })
@@ -211,7 +211,7 @@ server <- function(input, output, session) {
   # Update the list of aspects in the past weather box:
   observe({
     print(paste('<10: observe - Update aspects: input$ci=',input$ci,'input$lingo=',input$lingo))
-    print(varids)
+    #print(varids)
     #REB2020-11-05*** varids <- updatevarids()
     y <- updatetimeseries()
     ii <- as.numeric(input$ci)
@@ -227,7 +227,7 @@ server <- function(input, output, session) {
       names(aspects) <- aspectnameT[as.numeric(input$lingo),]
     }
     #print(aspects)
-    updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])
+    #updateSelectInput(session=session,inputId="aspect",choices=aspects,selected=aspects[1])  #REB 2023-08-11 - comment out
   })
   
   ## Updates the countries in the drop-down list
@@ -649,7 +649,7 @@ server <- function(input, output, session) {
     ## Only show good data
     good <- is.finite(Y$longitude) & is.finite(Y$latitude) & is.finite(statistic)
     Y <- Y[good,]; statistic <- statistic[good]; filter <- filter[good]
-    print('Check statistics and pallette'); str(statistic[filter]); str(pal(statistic[filter]))
+    print('Check statistics and palette'); str(statistic[filter]); str(pal(statistic[filter]))
     
     ## Mark the selected location
     is <- which(tolower(Y$location[filter]) == tolower(input$location))[1]
@@ -667,7 +667,7 @@ server <- function(input, output, session) {
     str(Y$longitude[filter]); str(Y$latitude[filter])
     print(paste(Y$location[filter],as.character(round(statistic[filter],digits = 2))))
     str(radius);
-    
+    print("str(Y$station.id[filter])")
     str(Y$station.id[filter])
     
     leaflet("mapid") %>% 
@@ -1067,7 +1067,6 @@ server <- function(input, output, session) {
     #print(c(average,slope,varpro,trendpvalue))
     textout <- paste(esd::loc(y)[1],'in',esd::cntr(y)[1],'mean=',average,'. Trend=', slope,esd::unit(y)[1],'per decade and explains', 
           varpro,'% of the variance with a probability of',trendpvalue,'% that it is due to chance.')
-    print("...{)")
     textout
   })
   output$hdes <- renderText({
@@ -1114,7 +1113,6 @@ server <- function(input, output, session) {
     }
     #print(c(hdescr,hsum))
     paste(hdescr,'. ',hsum,'. Sample size= ',sum(is.finite(yH)),' data points.',sep='')
-    print("...{)")
   })
   output$yearlabel <- renderText({
     showhideyears[as.numeric(input$lingo)]})
