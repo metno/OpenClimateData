@@ -118,9 +118,11 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "The proportion of wet spells longer than the current one (according to a geometric distribution)",
       "The proportion of dry spells longer than the current one (according to a geometric distribution)")
   )
-  #print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
+  print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
-  descr <- description[match(tolower(stattype),tolower(types))]
+  ipick <- match(tolower(stattype),tolower(types))
+  descr <- description[ipick]
+  print(descr)
   print('...')
   return(descr)
 }
@@ -137,16 +139,16 @@ getstattype <- function(fname,lingo=NULL) {
   stattype <- rownames(table(substr(names(meta),1,regexpr('_',names(meta))-1)[sapply(meta,is.numeric)]))
   stattype <- stattype[!is.element(stattype,c('station.id'))]
   stattype <- sub('-','_',stattype)
-  if (length(grep("last_element_highest",stattype))>0) {
-    stattype <- stattype[-grep("last_element_highest",stattype)]
+  if (length(grep("lehr|last_element_highest",stattype))>0) {
+    stattype <- stattype[-grep("lehr|last_element_highest",stattype)]
   }
-  if (length(grep("last_element_lowest",stattype))>0) {
-    stattype <- stattype[-grep("last_element_lowest",stattype)]
+  if (length(grep("lelr|last_element_lowest",stattype))>0) {
+    stattype <- stattype[-grep("lelr|last_element_lowest",stattype)]
   }
   if ( (length(grep('wetmean',names(meta)))>0) & (length(grep('wetfreq',names(meta)))>0) )
     stattype <- c(stattype,'10.year.return.value')
   if (length(grep('wetdur',names(meta)))) {
-    stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry') 
+    stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry')
   }
   if (length(grep('sd_',names(meta)))) {
     stattype <- c(stattype,'Days_Above_normal') 
@@ -155,7 +157,7 @@ getstattype <- function(fname,lingo=NULL) {
   if (!is.null(lingo)) {
     names(stattype) <- type2name(stattype,lingo,types)
   }
-  
+  print(names(stattype))
   return(stattype)
 }
 
