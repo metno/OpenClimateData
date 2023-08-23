@@ -22,6 +22,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG SHINY_URL=https://download3.rstudio.org/ubuntu-18.04/x86_64/shiny-server-1.5.20.1002-amd64.deb
 ARG SHINY_SHA256=36667a9fbe59a103dcc147766cbf06027034887c3efb82a3c13bba32e255633b
 ARG UBUNTU_LTS=jammy
+ENV LC_ALL=C.utf8
 COPY --from=apt-key /work/*.gpg /etc/apt
 COPY dependencies.ubuntu /
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \

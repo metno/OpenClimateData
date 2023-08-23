@@ -19,6 +19,9 @@ spec:
   containers:
     - name: app
       image: ocdp
+      env:
+      - name: LC_ALL
+        value: C.utf8
       ports:
       - name: http
         containerPort: 3838
@@ -42,6 +45,9 @@ spec:
       args:
         - /usr/local/bin/supercronic
         - /etc/cron.d/crontab
+      env:
+      - name: LC_ALL
+        value: C.utf8
       securityContext: *containerSecurityContext
       volumeMounts:
         - name: crondir
