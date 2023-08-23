@@ -213,6 +213,8 @@ lingo <- 1                         ## Default language option
 
 ## Get a list of files with data - Get the file names of the data
 fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+print(fnames)
+if (length(fnames)==0) stop(paste('OpenClimateData: there is a problem - there are no data files in data!'))
 dots <- gregexpr('.',fnames,fixed=TRUE)
 src <- fnames
 for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
@@ -413,6 +415,8 @@ cntrs <- c('All',rownames(table(Y$country)))
 
 ## The variable 'filter' is used for zooming in on the data based on their range of values
 filter <- rep(TRUE,length(Y$station.id))
+
+pdf(file = NULL)
 
 print('--- <Settings OK> ---')
 

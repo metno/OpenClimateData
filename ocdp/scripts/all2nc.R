@@ -23,13 +23,15 @@ add.latest=TRUE # In case some of the latest data is suspect or corrupt, then se
 ## Generate a new file from scratch at the start of each month:
 if (format(Sys.time(),'%d')=="01") new.data.file <- TRUE else new.data.file <- FALSE
 new.data.file <- FALSE
+active.stations <- FALSE
+nsby <- 35
 #fromenddate <- '1961-01-01'
 fromenddate <- NULL
 i30path <- 'nc30'
 t1 <- Sys.time()
 
 ## Select one or several of the elements through an index
-params <- c('precip','t2m','tmax','tmin','fg','fx','sd','pp','dd') #[1:7] ## problems with dd & pp
+params <- c('precip','t2m','tmax','tmin','fg','fx','sd','pp','dd')[1:7] ## problems with dd & pp
 
 if (test) {
   print('Test with test.nc')
@@ -45,7 +47,8 @@ if (test) {
 for (param in params) {  
   print(param)
   if (!test) { 
-    path <- '/srv/shiny-server/data'
+    #path <- './'
+    path <- '~/OpenClimateData/data/'
     testfile <- paste0(path,param,'.metnod.nc')
     if (!file.exists(testfile)) {
       print(paste('Unable to read',testfile))
@@ -98,6 +101,7 @@ for (param in params) {
       #   x <- try(station(param='slp',stid=meta$station.id,src='metnod.frost',verbose=verbose,it=it))
       
                                         #x <- seNorgeStations(param=param,it=it,meta=meta)
+      if (param=="pp") param <- "slp"
       x <- station(param=param,src='metnod.frost',it=it,is=is,nmin=nmin, verbose=verbose)
       x0 <- x
       if (!is.null(x)) print('Retrieved Frost data:') else stop('Failed to read data from Frost')
@@ -115,6 +119,7 @@ for (param in params) {
             it2 <- as.character(as.Date(attr(meta,'period')))
             if (!is.null(fromenddate)) it2 <- c(as.character(as.Date(attr(meta,'period')[1])),fromenddate)
           }  
+          if (active.stations) it2[1] <- '1961-01-01'
           print(paste('read the old file',fname,'... time:',it2[1],'-',it2[2]))
           y <- retrieve.station(file=fname,it=it2)
           it0 <- it
@@ -151,6 +156,15 @@ for (param in params) {
             }
           } 
         } else z <- x
+        ## If active.station=TRUE, reduce the number os stations to those currently actve
+        if (active.stations) {
+          ## reduce the data volume
+          z <- subset(z,it=c(1961,year(Sys.time())))
+          n3ly <- apply(subset(z,it=c(year(Sys.time())-2,year(Sys.time()))),2,'nv')
+          z <- subset(z,is=n3ly > 2*366)
+          print('Reduceded selection of stations to active ones')
+          print(dim(z))
+        }
         #plot(subset(z,is=stid(z)==18700,it=c(2010,2020)))
         ## Test to see if the path has write access - if not, use the local path
         test.writeaccess <- file.access(path, 2)
@@ -167,15 +181,16 @@ for (param in params) {
        # append <- FALSE
         if (!file.exists(i30path)) dir.create(i30path) else 
           if (length(list.files(path=i30path))>0) file.remove(list.files(path=i30path,full.names = TRUE))
-        for (i30 in seq(1,ns,by=30)) {
-          print(paste('Saving stations,',i30,'to',min(c(i30+29,ns)),'in',
-                      file.path(i30path,paste0(fname,'_',i30,'.nc'))))
-          z30 <- subset(z,is=i30:min(c(i30+29,ns)))
+        for (i30 in seq(1,ns,by=nsby)) {
+          z30 <- subset(z,is=i30:min(c(i30+nsby-1,ns)))
           #nctemp[[paste0(fname,i30,'nc')]] <- paste0(fname,i30,'nc')
           #write2ncdf4.station(z30,file=paste0(fname,'x'),append = append,verbose=verbose)
           #append - TRUE
           ci30 <- as.character(i30); while (nchar(ci30) < 4) ci30 <- paste0('0',ci30)
-          write2ncdf4.station(z30,file=file.path(i30path,paste0(fname,'_',ci30,'.nc')),verbose=verbose)
+          print(paste('Saving stations,',i30,'to',min(c(i30+nsby-1,ns)),'in',
+                      file.path(i30path,paste0(fname,'_',ci30,'.nc'))))
+          if (dim(z)[2]>1)
+            write2ncdf4.station(z30,file=file.path(i30path,paste0(fname,'_',ci30,'.nc')),verbose=verbose)
         }
         print('Finished saving all station subsets into nc-files - now combine them')
         nc30files <- list.files(path=i30path,pattern=fname,full.names=TRUE)
