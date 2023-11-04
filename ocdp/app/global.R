@@ -20,6 +20,63 @@ library(RColorBrewer)
 
 ## Functions used by the app: -------------------------------------------------------------------------------------
 
+## Use getncattr to retrieve attributes/metadata for the app dashboard display/information
+## e.g. source, countries
+getncinfo <- function(file) {
+  print(paste('getncinfo',file,'wd=',getwd()))
+  ncid <- nc_open(file)
+  varid <- names(ncid$var)
+  loc <- ncvar_get(ncid,'loc')
+  cntr <- ncvar_get(ncid,'cntr')
+  src <- ncatt_get(ncid,0,'source')$value
+  latmin <- floor(ncatt_get(ncid,0,'geospatial_lat_min')$value)
+  latmax <- ceiling(ncatt_get(ncid,0,'geospatial_lat_max')$value)
+  lonmin <- floor(ncatt_get(ncid,0,'geospatial_lon_min')$value)
+  lonmax <- ceiling(ncatt_get(ncid,0,'geospatial_lon_max')$value)
+  t.start <- ncatt_get(ncid,0,'time_coverage_start')$value
+  t.end <- ncatt_get(ncid,0,'time_coverage_end')$value
+  nc_close(ncid)
+  cntrtab <- table(cntr)
+  if (is.null(src) | is.na(src) | length(src)==0 | nchar(src)==0) src <- substr(file,
+                                               gregexpr('.',file,fixed =TRUE)[[1]][1]+1,gregexpr('.',file,fixed =TRUE)[[1]][2]-1)
+  if (length(rownames(cntrtab))==1) reg <- rownames(cntrtab)[1] else if (length(rownames(cntrtab))==2) { 
+    reg <- paste(rownames(cntrtab)[1],rownames(cntrtab)[length(rownames(cntrtab))],sep=' and ')
+  } else { 
+    reg <- paste(length(rownames(cntrtab)),' countries from ', rownames(cntrtab)[1],rownames(cntrtab)[length(rownames(cntrtab))],sep=' to ')
+  }
+  info <- paste0(vari2name(varid[1]),' from ',length(loc),' stations for the period ',t.start,' to ',t.end,' within ',reg,': ',
+                 round(latmin),'-',latmax,'N/',lonmin,'-',lonmax,'E. Source: ',src[1],'. File: ',sub('data/','',file))
+  attr(info,'cntr') <- table(cntr)
+  attr(info,'src') <- src
+  attr(info,'varid') <- varid
+  return(info)
+} 
+
+# 
+## The following reactive expressions get updated file information and metadata
+updatefilenames <- function(src,datainfo) {
+  print('<13: function - updatefilenames()')
+  #fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+  fnames <- names(datainfo)
+  fnames <- fnames[grep(src,fnames)]
+  #fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
+  #fnames <- fnames[grep(src[match(input$src,src)],fnames)]
+  print(fnames); print(src)
+  return(fnames)
+}
+
+getdatainfo <- function() {
+  fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+  print(getwd())
+  print(fnames)
+  datainfo <- list()
+  for (fname in fnames) {
+    ncinfo <- getncinfo(fname)
+    datainfo[[fname]] <- ncinfo
+  }
+  return(datainfo)
+}
+
 ## Organises the names of the statistic presented in the map and their appearances in the menu. Supports multiple languages
 type2name <-function(stattype,lingo,types) {
   print('<A: type2name')
@@ -47,7 +104,11 @@ type2name <-function(stattype,lingo,types) {
       "Days above normal","Proportion with longer wet spells","Proportion with longer dry spells")
   )
   matchingname <- names[as.numeric(lingo),]
-  descr <- matchingname[match(tolower(stattype),tolower(types))]
+  ipick <- match(tolower(stattype),tolower(types))
+  ipick <- ipick[!is.na(ipick)]
+  descr <- matchingname[ipick]
+  print(descr)
+  print('... A>')
   return(descr)
 }
 
@@ -118,10 +179,13 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "The proportion of wet spells longer than the current one (according to a geometric distribution)",
       "The proportion of dry spells longer than the current one (according to a geometric distribution)")
   )
-  #print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
+  print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
-  descr <- description[match(tolower(stattype),tolower(types))]
-  print('...')
+  ipick <- match(tolower(stattype),tolower(types))
+  ipick <- ipick[!is.na(ipick)]
+  descr <- description[ipick]
+  print(descr)
+  print('... B>')
   return(descr)
 }
 
@@ -137,16 +201,16 @@ getstattype <- function(fname,lingo=NULL) {
   stattype <- rownames(table(substr(names(meta),1,regexpr('_',names(meta))-1)[sapply(meta,is.numeric)]))
   stattype <- stattype[!is.element(stattype,c('station.id'))]
   stattype <- sub('-','_',stattype)
-  if (length(grep("last_element_highest",stattype))>0) {
-    stattype <- stattype[-grep("last_element_highest",stattype)]
+  if (length(grep("lehr|last_element_highest",stattype))>0) {
+    stattype <- stattype[-grep("lehr|last_element_highest",stattype)]
   }
-  if (length(grep("last_element_lowest",stattype))>0) {
-    stattype <- stattype[-grep("last_element_lowest",stattype)]
+  if (length(grep("lelr|last_element_lowest",stattype))>0) {
+    stattype <- stattype[-grep("lelr|last_element_lowest",stattype)]
   }
   if ( (length(grep('wetmean',names(meta)))>0) & (length(grep('wetfreq',names(meta)))>0) )
     stattype <- c(stattype,'10.year.return.value')
   if (length(grep('wetdur',names(meta)))) {
-    stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry') 
+    stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry')
   }
   if (length(grep('sd_',names(meta)))) {
     stattype <- c(stattype,'Days_Above_normal') 
@@ -155,7 +219,7 @@ getstattype <- function(fname,lingo=NULL) {
   if (!is.null(lingo)) {
     names(stattype) <- type2name(stattype,lingo,types)
   }
-  
+  print(names(stattype))
   return(stattype)
 }
 
@@ -163,10 +227,10 @@ getstattype <- function(fname,lingo=NULL) {
 vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
                                'cc','ss','pp','fg','fx','sd','dd','qq','hu'),
                       vnames=c('Precipitation','Daily mean temperature',
-                              'Daily max temperature','Daily min temperature',
-                              'Cloud cover','Sunshine','Sea-level pressure','Wind speed',
-                              'Max wind gust','Snow depth','Wind direction',
-                              'Global Radiation','Humidity'),nc=3) {
+                               'Daily max temperature','Daily min temperature',
+                               'Cloud cover','Sunshine','Sea-level pressure','Wind speed',
+                               'Max wind gust','Snow depth','Wind direction',
+                               'Global Radiation','Humidity'),nc=3) {
   print('<C: vari2name')
   y <- x
   if (length(vars) != length(vnames)) stop("vars have different length to vnames in 'variname'")
@@ -184,16 +248,16 @@ monthtrends <- function(x,FUN=NULL) {
   print('monthtrends:')
   if (is.null(FUN)) 
     if (is.precip(x)) FUN='sum' else FUN='mean'
-  y <- rep(NA,12); dy <- y; p <- y
-  for (i in 1:12) {
-    z <- subset(as.monthly(x,FUN=FUN),it=month.abb[i])
-    y[i] <- trend(z,result='coef')
-    dy[i] <- trend(z,result='err')
-    p[i] <- trend(z,result='pval')
-  }
-  Y <- data.frame(trend=cbind(y,y+dy,y-dy),pval=p,month=1:12)
-  print(Y)
-  return(Y)
+    y <- rep(NA,12); dy <- y; p <- y
+    for (i in 1:12) {
+      z <- subset(as.monthly(x,FUN=FUN),it=month.abb[i])
+      y[i] <- trend(z,result='coef')
+      dy[i] <- trend(z,result='err')
+      p[i] <- trend(z,result='pval')
+    }
+    Y <- data.frame(trend=cbind(y,y+dy,y-dy),pval=p,month=1:12)
+    print(Y)
+    return(Y)
 }
 
 ## Include the southern Oct-Mar rainy season in the set of seasons 
@@ -205,6 +269,7 @@ as.5seasons <- function(x) {
 
 ## The start-up settings - global variables etc used in the UI and server. Supports several languages
 print('--- <Initial settings> ---')
+datainfo <- getdatainfo()
 ## Defaults
 verbose <-FALSE                     ## For debugging
 lingo <- 1                         ## Default language option                
@@ -212,17 +277,20 @@ lingo <- 1                         ## Default language option
 #zoom <- 5                         ## Default zooming in the map
 
 ## Get a list of files with data - Get the file names of the data
-fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+#fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
+fnames <- names(datainfo)
 print(fnames)
 if (length(fnames)==0) stop(paste('OpenClimateData: there is a problem - there are no data files in data!'))
 dots <- gregexpr('.',fnames,fixed=TRUE)
-src <- fnames
-for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
+#src <- fnames
+#for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
+src <- unlist(lapply(datainfo,function(x) attr(x,'src')))
 src <- rownames(table(src))
 print(src)
+
 ## Start with data from Met Norway or the first in alphabetic order in not found.
 if (length(src) > 1) { 
-  reg1 <- (1:length(src))[is.element(src,'metnod')]                          ## Default source of dataset/region
+  reg1 <- (1:length(src))[is.element(src,'Norway')]                          ## Default source of dataset/region
   if (length(reg1)==0) reg1 <- 1 else if (is.na(reg1)) reg1 <- 1
   fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
   fnames <- fnames[grep(src[reg1],fnames)]
@@ -237,69 +305,24 @@ varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
 
 ## Setting for menues etc. 
 ci <- c(1:length(varids)); names(ci) <- vari2name(varids)
+print(ci); print(fnames); print(varids)
 
 ## Extract information about summary statistics from the netCDF-files
 ipre <- ci[varids=='precip']
+print(ipre)
 stattype <- getstattype(fnames[ipre])
 print(stattype); print(varids)
 
 r_colors <- rgb(t(col2rgb(colors()) / 255))
 names(r_colors) <- colors()
 
-## Data sources - representing different regions
-#src <- c('metnod','ecad','Asia','Pacific')
 
-## The labeling of the data sources in the menu
-regions <- rbind(c('Norge','Europa','Europa','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America',
-                   'Mosambik','Argentina','Midtøsten','Nord-Afrika','Sørøst-Afrika'),
-                 c('Noreg','Europa','Europa','Asia','Stillehavet','Afrika','Latin-Amerika','Australia','Nord-America',
-                   'Mosambik','Argentina','Midtausten','Nord-Afrika','Søraust-Afrika'),
-                 c('Norway','Europe','Europe','Asia','The Pacific','Africa','Latin-America','Australia','North America',
-                   'Mozambique','Argentinia','Middle-East','North-Africa','Southeast-Africa'))
-source.regions <- c('metnod','eustance','europe.ecad','Asia','Pacific','Africa','LatinAmerica','Australia','USA',
-                    'INAM','CLARIS','meast.ecad','nafrca.ecad','southeastAfrica')
-
-names.src <- regions[1,match(src,source.regions)]
-## If not in the list, use part of the file neams as region identifier.
-names.src[is.na(names.src)] <- toupper(src[is.na(names.src)])
-names(src) <- names.src
 descrlab <- c('Forklaring:','Forklaring:','Description:')
 decade <- c('tiår','tiår','decade')
 degree <- c('grader','grader','degrees')
 yr <- c('år','år','year')
 yrs <- c('år','år','years')
 days <- c('dager','dagar','days')
-
-
-sources <- rbind( c('Oppdaterte data fra Meteorologisk institutt. Kun stasjoner med mer enn 30 år er inkludert',
-                    'Oppdaterte data fra Meteorologisk institutt. Kun stasjonar med meir enn 30 år er inkludert',
-                    'Up-to-date data from Met Norway. Only includes station series longer than 30 years.'),
-                  c('Åpne data fra European Climate and Assessment Dataset, Non-blended (ECA&D). Kilde: https://www.ecad.eu/',
-                    'Åpne data fra European Climate and Assessment Dataset, Non-blended (ECA&D). Kilde: https://www.ecad.eu/',
-                    'Open climate data from Climate and Assessment Dataset, Non-blended (ECA&D). Source: https://www.ecad.eu/'),
-                  c('Åpne data fra EUSTANCE. Kilde: https://www.ecad.eu/',
-                    'Åpne data fra EUSTANCE. Kilde: https://www.ecad.eu/',
-                    'Open climate data from EUSTANCE. Source: https://www.ecad.eu/'),
-                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Åpne data fra Global Historical Climate Network (GHCN). Kilde: https://www.ncdc.noaa.gov/ghcn-daily-description',
-                    'Open data from Global Historical Climate Network (GHCN). Source: https://www.ncdc.noaa.gov/ghcn-daily-description'),
-                  c('INAM','INAM','INAM'),c('CLARIS','CLARIS','CLARIS'),rep('meast.ecad',3),rep('nafrca.ecad',3),
-                  rep('CORDEX FPS southeast Africa',3) )
 
 ## Types of statistics
 types <- c("altitude","first.year","lastrains","lastdry","last.year","latitude","longitude","max",           
@@ -418,6 +441,8 @@ filter <- rep(TRUE,length(Y$station.id))
 
 pdf(file = NULL)
 
+print(ci); print(varids)
+print(ci[varids=='precip'])
 print('--- <Settings OK> ---')
 
 

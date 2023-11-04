@@ -10,10 +10,10 @@ ui <- dashboardPage(
   skin="green",
   dashboardHeader(title = textOutput("maintitle")),
   dashboardSidebar(
-    selectInput("src", "Region", 
-                choices= src,selected='metnod'),
+    selectInput("src", "Region/source", 
+                choices= src,selected='Norway'),
     box(textOutput("datainterval"),background='black',width=12),
-    selectInput("ci", "Climate Index", choices= ci, selected=ci[varids=='precip']),
+    selectInput("ci", "Climate variable", choices= ci, selected=ci[varids=='precip']),
     selectInput("location", textOutput("locationlabel"), choices= Y$location,
                 selected = 'Oslo - blindern'),
     
