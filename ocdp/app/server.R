@@ -567,7 +567,7 @@ server <- function(input, output, session) {
     if (length(grep(tolower('sigma2'),tolower(input$statistic)))>0) title <- 'mm^2'
     if (length(grep(tolower('prob_long'),tolower(input$statistic)))>0) title <- '%'
     ## Change the legend if presenting probability for last days beeing longlasting wet/dry
-    if (length(grep(tolower('last'),tolower(input$statistic)))>0) title <- 'days'
+    if (length(grep(tolower('last|daysold'),tolower(input$statistic)))>0) title <- 'days'
     #print(paste('legend title',title))
     return(title)
   })
