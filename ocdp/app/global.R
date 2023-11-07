@@ -87,21 +87,24 @@ type2name <-function(stattype,lingo,types) {
       "Dager med nedbør","Typisk nedbørsintensitet",
       "Antall dager over terskelverdi","Utvalgt dato","Standardavvik","Antall lave rekorder","Varians",
       "Varianstrend","10-år-returverdi","Gjennomsnittlig opphold","Gjennomsnittlig regnvarighet",
-      "Dager over normalen","Andel med flere våte dager","Andel med flere tørre dager"),
+      "Dager over normalen","Andel med flere våte dager","Andel med flere tørre dager",
+      "Antall dager siden site observasjon"),
     c("Høgde over havet","Start år","Dagar siden siste regn","siste dagar i strekk med nedbør","Siste år","Breddegrad",           
       "Lengdegrad","Maksimumsverdi","Gjennomsnitt","Minimumsverdi","Antall år med data",
       "Antall høge rekordar","Trend","Trend: dager med nedbør","Trend: nedbørintensitet", 
       "Dager med nedbør","Typisk nedbørsintensitet",
       "Antall dagar over terskelverdi","Utvalgt dato","Standardavvik","Antall låge rekordar","Varians",
       "Varianstrend","10-år-returverdi","Gjennomsnittlig opphold","Gjennomsnittlig regnvarighet",
-      "Dagar over normalen","Andel med fleire våte dagar","Andel med fleire tørre dagar"),
+      "Dagar over normalen","Andel med fleire våte dagar","Andel med fleire tørre dagar",
+      "Antall dager siden site observasjon"),
     c("Altitude","Start year","Days since last rain","Continuous ongoing rainy days","End year","Latitude",           
       "Longitude","Maximum","Average","Minimum","Years with data"," Number of record-highs",
       "Trend","Trend in wet days","Trend in rain intensity", 
       "Number of wet days","Mean rain intensity","Number of days above threshold",
       "Specific date","Standard deviation","Number of record-lows","Variance",
       "Trend in variance","10-year-return-value","Average dry spell","Average wet spell",
-      "Days above normal","Proportion with longer wet spells","Proportion with longer dry spells")
+      "Days above normal","Proportion with longer wet spells","Proportion with longer dry spells",
+      "Days since last observation")
   )
   matchingname <- names[as.numeric(lingo),]
   ipick <- match(tolower(stattype),tolower(types))
@@ -134,7 +137,8 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Gjennomsnittlig varighet på nedbørsepisoder (dager)",
       "Dager over normalen",
       "Hvor stor andel av våte perioder er lengre enn denne (basert på geometrisk fordelign)",
-      "Hvor stor andel av tørre perioder er lengre enn denne (basert på geometrisk fordelign)"),
+      "Hvor stor andel av tørre perioder er lengre enn denne (basert på geometrisk fordelign)",
+      "Antall dager siden siste observason og data for datalagring"),
     c("Høgde over havet i meter (metadata)","Året da mælingane starta (metadata)",
       "Kor mange dagar det har gått utan nedbør","Hvor mange dager det har gått med nedbør",
       "Siste år med mælinger (metadata)","Mælestasjonens breddegrad (metadata)",
@@ -154,7 +158,8 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Gjennomsnittlig varighet på nedbørsepisoder (dagar)",
       "Dager over normalen",
       "Hvor stor andel av våte perioder er lengre enn denne (basert på geometrisk fordelign)",
-      "Hvor stor andel av tørre perioder er lengre enn denne (basert på geometrisk fordelign)"),
+      "Hvor stor andel av tørre perioder er lengre enn denne (basert på geometrisk fordelign)",
+      "Antall dager siden siste observason og data for datalagring"),
     c("The elevation of the station in m above sea level (metadata))",
       "The year when the observations started (metadata)","Number of days without rain",
       "Number of days with rain",
@@ -177,7 +182,8 @@ explainmapstatistic <- function(stattype,lingo,types) {
       "Mean duration of a dry spell (days)","Mean duration of a wet spell (days)",
       "Day with measurements above the normal",
       "The proportion of wet spells longer than the current one (according to a geometric distribution)",
-      "The proportion of dry spells longer than the current one (according to a geometric distribution)")
+      "The proportion of dry spells longer than the current one (according to a geometric distribution)",
+      "Number of daysa between the last observation and the data of the data file generation")
   )
   print(paste('explainmapstatistic: language=',lingo,'stattype=',stattype))
   description <- descriptions[as.numeric(lingo),]
@@ -190,17 +196,20 @@ explainmapstatistic <- function(stattype,lingo,types) {
 }
 
 
-## Extract the avaiable statistics to present on the map based on the aggregated statistics stored in the netCDF files
+## Extract the available statistics to present on the map based on the aggregated statistics stored in the netCDF files
 getstattype <- function(fname,lingo=NULL) {
   print(paste('<C: getstattype',fname,lingo))
   meta <- retrieve.stationsummary(fname)
-  #print(names(meta))
+  print(names(meta))
   doubleuscrs <- unlist(lapply(gregexpr('_',names(meta)),length)) > 1
   names(meta)[doubleuscrs] <- sub('_','-',names(meta)[doubleuscrs])
   names(meta) <- paste(names(meta),'_',sep='')
   stattype <- rownames(table(substr(names(meta),1,regexpr('_',names(meta))-1)[sapply(meta,is.numeric)]))
   stattype <- stattype[!is.element(stattype,c('station.id'))]
   stattype <- sub('-','_',stattype)
+  if (length(grep('daysold',names(meta)))>0) {
+    stattype <- c(stattype,'days_old') 
+  }
   if (length(grep("lehr|last_element_highest",stattype))>0) {
     stattype <- stattype[-grep("lehr|last_element_highest",stattype)]
   }
@@ -212,7 +221,7 @@ getstattype <- function(fname,lingo=NULL) {
   if (length(grep('wetdur',names(meta)))) {
     stattype <- c(stattype,'mean_drydur','mean_wetdur','prob_long_wet','prob_long_dry')
   }
-  if (length(grep('sd_',names(meta)))) {
+  if (length(grep('sd_',names(meta)))>0) {
     stattype <- c(stattype,'Days_Above_normal') 
   }
   stattype <- c(stattype,'Number_of_days','Specific_day')
@@ -220,6 +229,7 @@ getstattype <- function(fname,lingo=NULL) {
     names(stattype) <- type2name(stattype,lingo,types)
   }
   print(names(stattype))
+  print('...C>')
   return(stattype)
 }
 
@@ -231,16 +241,16 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
                                'Cloud cover','Sunshine','Sea-level pressure','Wind speed',
                                'Max wind gust','Snow depth','Wind direction',
                                'Global Radiation','Humidity'),nc=3) {
-  print('<C: vari2name')
+  print(paste('<D: vari2name',x))
   y <- x
   if (length(vars) != length(vnames)) stop("vars have different length to vnames in 'variname'")
   for (i in 1:length(x)) {
     pattern <- tolower(substr(x[i],1,nc))
-    #print(pattern);print(nc)
+    print(pattern);print(nc)
     ii <- grep(pattern = pattern,substr(vars,1,nc))
     if (length(ii)>0) y[i] <- vnames[ii]
   }
-  print(y)
+  print(paste(y,'...D>'))
   return(y)
 }
 
@@ -269,54 +279,48 @@ as.5seasons <- function(x) {
 
 ## The start-up settings - global variables etc used in the UI and server. Supports several languages
 print('--- <Initial settings> ---')
+## Get a list of files with data - Get the file names of the data and source/variable information
 datainfo <- getdatainfo()
 ## Defaults
 verbose <-FALSE                     ## For debugging
 lingo <- 1                         ## Default language option                
-#firstlocation <- 'Oslo - blind'   ## Default location
-#zoom <- 5                         ## Default zooming in the map
 
-## Get a list of files with data - Get the file names of the data
-#fnames <- list.files(path='data',pattern='.nc',full.names = TRUE)
 fnames <- names(datainfo)
 print(fnames)
 if (length(fnames)==0) stop(paste('OpenClimateData: there is a problem - there are no data files in data!'))
-dots <- gregexpr('.',fnames,fixed=TRUE)
-#src <- fnames
-#for (i in 1:length(fnames)) src[i] <- substr(fnames[i],dots[[i]][1]+1,dots[[i]][2]-1)
+## List of data sources/regions
 src <- unlist(lapply(datainfo,function(x) attr(x,'src')))
-src <- rownames(table(src))
 print(src)
 
 ## Start with data from Met Norway or the first in alphabetic order in not found.
 if (length(src) > 1) { 
-  reg1 <- (1:length(src))[is.element(src,'Norway')]                          ## Default source of dataset/region
-  if (length(reg1)==0) reg1 <- 1 else if (is.na(reg1)) reg1 <- 1
-  fnames <- fnames[grep('.nc',fnames,fixed=TRUE)]
+  reg1 <- grep('Norway|metnod',src)                        ## Default source of dataset/region
+  if (length(reg1)==0) reg1 <- 1 
   fnames <- fnames[grep(src[reg1],fnames)]
 } else reg1 <- 1
+print(fnames)
 
-## Extract variables
-#varids <- list.files(path='data',pattern='.nc',full.names = FALSE)
-varids <- substr(fnames,6,nchar(fnames))
-varids <- varids[grep(src[reg1],fnames)]
-varids <- substr(varids,1,regexpr('.',varids,fixed=TRUE)-1)
-#print(varids)
+## Extract variable information
+print('Get variable names')
+varids <- unlist(lapply(datainfo,function(x) attr(x,'varid')[1]))
+varids <- varids[grep(src[reg1],src)]
+print(varids)
 
-## Setting for menues etc. 
+## Setting for menus for climate indicator (ci). 
 ci <- c(1:length(varids)); names(ci) <- vari2name(varids)
-print(ci); print(fnames); print(varids)
+print(ci);
 
 ## Extract information about summary statistics from the netCDF-files
 ipre <- ci[varids=='precip']
-print(ipre)
+print(paste('ipre=',ipre))
 stattype <- getstattype(fnames[ipre])
-print(stattype); print(varids)
+print(stattype)
 
+## Set the colours for plotting
 r_colors <- rgb(t(col2rgb(colors()) / 255))
 names(r_colors) <- colors()
 
-
+## Descriptions in different languages
 descrlab <- c('Forklaring:','Forklaring:','Description:')
 decade <- c('tiår','tiår','decade')
 degree <- c('grader','grader','degrees')
@@ -329,7 +333,7 @@ types <- c("altitude","first.year","lastrains","lastdry","last.year","latitude",
            "mean","min","number.valid","records","trend","trend_wetfreq","trend_wetmean", 
            "wetfreq","wetmean","Number_of_days","Specific_day","sd","lows","sigma2",
            "trend_sigma2","10.year.return.value","mean_drydur","mean_wetdur","Days_above_normal",
-           "prob_long_wet","prob_long_dry")
+           "prob_long_wet","prob_long_dry","daysold")
 
 ## Seasons for the statistics presented in the maps
 sea <- c('All year'='all','Dec-Feb'='DJF',
@@ -435,6 +439,7 @@ statisticmin <- round(min(Y$mean,na.rm=TRUE))
 statisticmax <- round(max(Y$mean,na.rm=TRUE))
 
 cntrs <- c('All',rownames(table(Y$country)))
+src <- rownames(table(src))
 
 ## The variable 'filter' is used for zooming in on the data based on their range of values
 filter <- rep(TRUE,length(Y$station.id))
