@@ -295,14 +295,14 @@ print(src)
 if (length(src) > 1) { 
   reg1 <- grep('Norway|metnod',src)                        ## Default source of dataset/region
   if (length(reg1)==0) reg1 <- 1 
-  fnames <- fnames[grep(src[reg1],fnames)]
+  fnames <- fnames[grep(src[reg1],src,fixed=TRUE)]
 } else reg1 <- 1
 print(fnames)
 
 ## Extract variable information
 print('Get variable names')
 varids <- unlist(lapply(datainfo,function(x) attr(x,'varid')[1]))
-varids <- varids[grep(src[reg1],src)]
+varids <- varids[grep(src[reg1],src,fixed=TRUE)]
 print(varids)
 
 ## Setting for menus for climate indicator (ci). 
