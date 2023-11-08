@@ -243,12 +243,12 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
                                'Global Radiation','Humidity'),nc=3) {
   print(paste('<D: vari2name',x,collapse=' '))
   x <- sub('slp','pp',x)
-  x <- sub('precip','rr',x)
+  x <- sub('precip','pre',x)
   if (length(vars) != length(vnames)) {  
     print(vars); print(vnames)
     stop("vars have different length to vnames in 'variname'")
   }
-  y <- vnames[match(x,vars)]
+  y <- vnames[match(tolower(substr(x,1,4)),vars)]
   print(paste(y,'...D>',collapse=' '))
   return(y)
 }

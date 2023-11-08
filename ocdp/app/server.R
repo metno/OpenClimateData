@@ -346,8 +346,8 @@ server <- function(input, output, session) {
     print('<17: reactive - updateci()')
     varids <- updatevarids()
     ci <- 1:length(varids); names.ci <- names(varids)
-    ## In case the vairable is missing in our list
-    names.ci[is.na(names.ci)] <- toupper(varids[is.na(names.ci)])
+    ## In case the variable is missing in our list
+    names.ci[is.na(names.ci)] <- vari2name(varids[is.na(names.ci)])
     #print(names.ci)
     names(ci) <- names.ci
     return(ci)
