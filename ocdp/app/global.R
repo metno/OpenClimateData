@@ -38,7 +38,7 @@ getncinfo <- function(file) {
   nc_close(ncid)
   cntrtab <- table(cntr)
   if (is.null(src) | is.na(src) | length(src)==0 | nchar(src)==0) src <- substr(file,
-                                               gregexpr('.',file,fixed =TRUE)[[1]][1]+1,gregexpr('.',file,fixed =TRUE)[[1]][2]-1)
+                                                                                gregexpr('.',file,fixed =TRUE)[[1]][1]+1,gregexpr('.',file,fixed =TRUE)[[1]][2]-1)
   if (length(rownames(cntrtab))==1) reg <- rownames(cntrtab)[1] else if (length(rownames(cntrtab))==2) { 
     reg <- paste(rownames(cntrtab)[1],rownames(cntrtab)[length(rownames(cntrtab))],sep=' and ')
   } else { 
@@ -241,16 +241,15 @@ vari2name <- function(x,vars=c('pre','t2m','tmax','tmin',
                                'Cloud cover','Sunshine','Sea-level pressure','Wind speed',
                                'Max wind gust','Snow depth','Wind direction',
                                'Global Radiation','Humidity'),nc=3) {
-  print(paste('<D: vari2name',x))
-  y <- x
-  if (length(vars) != length(vnames)) stop("vars have different length to vnames in 'variname'")
-  for (i in 1:length(x)) {
-    pattern <- tolower(substr(x[i],1,nc))
-    print(pattern);print(nc)
-    ii <- grep(pattern = pattern,substr(vars,1,nc))
-    if (length(ii)>0) y[i] <- vnames[ii]
+  print(paste('<D: vari2name',x,collapse=' '))
+  x <- sub('slp','pp',x)
+  x <- sub('precip','rr',x)
+  if (length(vars) != length(vnames)) {  
+    print(vars); print(vnames)
+    stop("vars have different length to vnames in 'variname'")
   }
-  print(paste(y,'...D>'))
+  y <- vnames[match(x,vars)]
+  print(paste(y,'...D>',collapse=' '))
   return(y)
 }
 
